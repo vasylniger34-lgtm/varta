@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  tasks        Task[]
+  systemLogs   SystemLog[]
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  done      Boolean  @default(false)
+  period    String   // "day" | "week" | "month"
+  parentId  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Task?    @relation("TaskChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Task[]   @relation("TaskChildren")
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  message   String
+  level     String   @default("INFO") // "INFO" | "WARN" | "ERROR"
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
