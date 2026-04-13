@@ -1,3 +1,4 @@
+import React from 'react'
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
