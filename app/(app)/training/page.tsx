@@ -1,11 +1,8 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-
-const API_URL = 'http://127.0.0.1:3005/api'
+const DEFAULT_API = 'http://127.0.0.1:3005/api'
 
 export default function TrainingPage() {
   const [rules, setRules] = useState<any[]>([])
+  const [apiUrl, setApiUrl] = useState(DEFAULT_API)
   const [status, setStatus] = useState('Connecting...')
   const [isOnline, setIsOnline] = useState(false)
 
@@ -13,23 +10,23 @@ export default function TrainingPage() {
   const [action, setAction] = useState('open_website')
   const [val, setVal] = useState('')
 
-  const loadData = async () => {
+  const loadData = async (customUrl = apiUrl) => {
     try {
-      const res = await fetch(`${API_URL}/commands`)
+      const res = await fetch(`${customUrl}/commands`)
       if (!res.ok) throw new Error('Offline')
       const data = await res.json()
       setRules(data.rules || [])
       setStatus('ONLINE')
       setIsOnline(true)
     } catch (e) {
-      setStatus('OFFLINE (VARTA Local Core is not running)')
+      setStatus('OFFLINE (Core unreachable)')
       setIsOnline(false)
     }
   }
 
   const saveData = async (newRules: any[]) => {
     try {
-      await fetch(`${API_URL}/commands`, {
+      await fetch(`${apiUrl}/commands`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rules: newRules })
@@ -42,9 +39,9 @@ export default function TrainingPage() {
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 5000)
+    const interval = setInterval(() => loadData(), 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [apiUrl])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
