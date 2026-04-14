@@ -1,11 +1,9 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useLayout } from './ClientLayout'
 
 export default function Topbar() {
   const pathname = usePathname()
   const [time, setTime] = useState<string>('')
+  const { toggleSidebar } = useLayout()
 
   // Get active module name from pathname
   const moduleName = pathname.split('/')[1] || 'dashboard'
@@ -29,16 +27,29 @@ export default function Topbar() {
 
   return (
     <header className="app-topbar">
-      <div className="topbar-title">
-        {moduleName} // module
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button 
+          className="mobile-menu-toggle"
+          onClick={toggleSidebar}
+          aria-label="Toggle Menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div className="topbar-title">
+          {moduleName} // module
+        </div>
       </div>
       
       <div className="topbar-meta">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="topbar-meta-item">
           <span style={{ color: 'var(--text-secondary)' }}>NET:</span>
           <span style={{ color: 'var(--status-online)' }}>SECURE</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="topbar-meta-item">
           <span style={{ color: 'var(--text-secondary)' }}>SYS:</span>
           <span>{time || 'SYNCING...'}</span>
         </div>

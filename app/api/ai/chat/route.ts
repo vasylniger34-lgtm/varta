@@ -6,11 +6,21 @@ import { prisma } from '@/lib/prisma'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 const SYSTEM_PROMPT = `You are VARTA AI — the intelligent core of the VARTA control system.
-Your purpose: assist the operator in managing their life, tasks, projects, and smart home.
-Personality: direct, concise, technical. No fluff, no excessive pleasantries.
-Respond in the same language the operator uses (Ukrainian, English, etc.).
-When discussing tasks, you can reference what the operator has shared.
-Format your responses clearly, using bullet points or sections when helpful.`
+You MUST respond EXCLUSIVELY in the VARTA Unified JSON format. No plain text outside the JSON.
+
+JSON STRUCTURE:
+{
+  "intent": "chat" | "open_youtube" | "search_google" | "open_website" | "run_application" | "set_volume" | "control_pc" | "type_keyboard" | "press_hotkey",
+  "payload": { ... arguments for the function ... },
+  "response": "Brief human-readable message in the operator's language"
+}
+
+RULES:
+1. If the operator is just talking/asking questions, use intent: "chat".
+2. If identifying an action (e.g., "open youtube", "make it louder"), use the specific intent and fill the payload.
+3. Respond in the same language as the operator (Ukrainian pref).
+4. Be concise and technical.
+5. All IDs and paths should be precise.`
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -37,6 +47,9 @@ export async function POST(req: NextRequest) {
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
       systemInstruction: SYSTEM_PROMPT + taskContext,
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
     })
 
     // Build chat history
@@ -47,18 +60,18 @@ export async function POST(req: NextRequest) {
 
     const chat = model.startChat({ history: chatHistory })
     const result = await chat.sendMessage(message)
-    const text = result.response.text()
+    const jsonResponse = JSON.parse(result.response.text())
 
     // Log the interaction
     await prisma.systemLog.create({
       data: {
-        message: `AI QUERY: "${message.substring(0, 60)}${message.length > 60 ? '...' : ''}"`,
+        message: `AI [${jsonResponse.intent}]: "${message.substring(0, 60)}"`,
         level: 'INFO',
         userId: session.userId,
       },
     })
 
-    return NextResponse.json({ response: text })
+    return NextResponse.json(jsonResponse)
   } catch (error: any) {
     console.error('[AI ERROR]', {
       message: error.message,

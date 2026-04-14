@@ -45,6 +45,24 @@ export default function AIPage() {
       
       if (data.response) {
         setMessages(prev => [...prev, { role: 'model', text: data.response }])
+        
+        // NEURAL STITCHING: Якщо інтент - це дія (не просто чат), відправляємо на локальний ПК
+        if (data.intent && data.intent !== 'chat') {
+          console.log(`[STITCHING] Routing action to Local PC: ${data.intent}`)
+          try {
+            await fetch('http://localhost:3005/api/execute', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                source: 'web',
+                intent: data.intent,
+                payload: data.payload
+              }),
+            })
+          } catch (err) {
+            console.warn('[STITCHING] Local PC Agent unreachable. Is VARTA running locally?')
+          }
+        }
       } else {
         const errorMsg = data.details ? `[ ERR: ${data.error} — ${data.details} ]` : `[ ERR: NO RESPONSE RECIEVED FROM AI CORE ]`
         setMessages(prev => [...prev, { role: 'model', text: errorMsg }])

@@ -57,9 +57,12 @@ const NAV_ITEMS = [
   },
 ]
 
+import { useLayout } from './ClientLayout'
+
 export default function Sidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { isSidebarOpen, setIsSidebarOpen } = useLayout()
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -67,66 +70,86 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
     router.refresh()
   }
 
+  const handleNavClick = () => {
+    // Close sidebar on mobile when navigating
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false)
+    }
+  }
+
   return (
-    <aside className="app-sidebar">
-      <div className="sidebar-logo">
-        <div className="sidebar-logo-text">
-          V<span className="sidebar-logo-accent">A</span>RT<span className="sidebar-logo-accent">A</span>
+    <>
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+        onClick={() => setIsSidebarOpen(false)}
+      />
+      <aside className={`app-sidebar ${isSidebarOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-text">
+            V<span className="sidebar-logo-accent">A</span>RT<span className="sidebar-logo-accent">A</span>
+          </div>
+          <div className="sidebar-logo-sub">Control System v1.0</div>
+          <button 
+            className="sidebar-close-btn"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            [CLOSE]
+          </button>
         </div>
-        <div className="sidebar-logo-sub">Control System v1.0</div>
-      </div>
 
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-item ${isActive ? 'active' : ''}`}
-            >
-              <span className="nav-item-icon">{item.icon}</span>
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <span className="nav-item-icon">{item.icon}</span>
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
 
-      <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="sidebar-user-dot" />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-            {userEmail}
-          </span>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-user-dot" />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              {userEmail}
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              marginTop: '12px',
+              width: '100%',
+              padding: '6px',
+              fontSize: '10px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--text-dim)',
+              border: '1px solid var(--border-default)',
+              background: 'transparent',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+              fontFamily: 'var(--font-mono)',
+            }}
+            onMouseEnter={e => {
+              (e.target as HTMLButtonElement).style.color = 'var(--accent-bright)'
+              ;(e.target as HTMLButtonElement).style.borderColor = 'var(--accent-dark)'
+            }}
+            onMouseLeave={e => {
+              (e.target as HTMLButtonElement).style.color = 'var(--text-dim)'
+              ;(e.target as HTMLButtonElement).style.borderColor = 'var(--border-default)'
+            }}
+          >
+            [ DISCONNECT ]
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{
-            marginTop: '12px',
-            width: '100%',
-            padding: '6px',
-            fontSize: '10px',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--text-dim)',
-            border: '1px solid var(--border-default)',
-            background: 'transparent',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-            fontFamily: 'var(--font-mono)',
-          }}
-          onMouseEnter={e => {
-            (e.target as HTMLButtonElement).style.color = 'var(--accent-bright)'
-            ;(e.target as HTMLButtonElement).style.borderColor = 'var(--accent-dark)'
-          }}
-          onMouseLeave={e => {
-            (e.target as HTMLButtonElement).style.color = 'var(--text-dim)'
-            ;(e.target as HTMLButtonElement).style.borderColor = 'var(--border-default)'
-          }}
-        >
-          [ DISCONNECT ]
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }

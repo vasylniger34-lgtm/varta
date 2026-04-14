@@ -4,6 +4,9 @@ import { getSession } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 
+import ClientLayout from '@/components/layout/ClientLayout'
+import BottomNav from '@/components/layout/BottomNav'
+
 export default async function AppLayout({
   children,
 }: {
@@ -13,14 +16,15 @@ export default async function AppLayout({
   if (!session) redirect('/auth/login')
 
   return (
-    <div className="app-root">
+    <ClientLayout>
       <Sidebar userEmail={session.email} />
       <div className="app-main">
         <Topbar />
         <div className="app-content">
           {children}
         </div>
+        <BottomNav />
       </div>
-    </div>
+    </ClientLayout>
   )
 }

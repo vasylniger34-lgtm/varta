@@ -82,7 +82,11 @@ export default function LifePage() {
       {loading ? (
            <div className="text-dim">SYNCING MODULE...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', 
+          gap: 'var(--space-6)' 
+        }}>
           <TaskColumn 
             title="DAY / TACTICAL" 
             period="day" 
