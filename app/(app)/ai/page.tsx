@@ -59,13 +59,17 @@ export default function AIPage() {
   return (
     <div className="animate-fade-in" style={{ height: 'calc(100vh - var(--topbar-height) - var(--space-6) * 2)', display: 'flex', flexDirection: 'column' }}>
       <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
-        <div className="page-label">MODULE_AI // CONNECTED</div>
+        <div className="page-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Sparkles size={12} /> MODULE_AI // CONNECTED
+        </div>
         <h1 className="page-title">COGNITIVE INTERFACE</h1>
       </div>
 
       <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div className="panel-header">
-          <div className="panel-title">AI FEED</div>
+          <div className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Command size={12} /> AI FEED
+          </div>
           <div className="status-badge online">LINK STABLE</div>
         </div>
         
@@ -76,8 +80,19 @@ export default function AIPage() {
               flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
               gap: 'var(--space-4)'
             }}>
-              <div style={{ flexShrink: 0, width: '32px', height: '32px', border: '1px solid', borderColor: msg.role === 'user' ? 'var(--text-dim)' : 'var(--accent-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: msg.role === 'user' ? 'var(--text-dim)' : 'var(--accent-bright)' }}>
-                {msg.role === 'user' ? 'OP' : 'AI'}
+              <div style={{ 
+                flexShrink: 0, 
+                width: '32px', 
+                height: '32px', 
+                border: '1px solid', 
+                borderColor: msg.role === 'user' ? 'var(--text-dim)' : 'var(--accent-mid)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: msg.role === 'user' ? 'var(--text-dim)' : 'var(--accent-bright)',
+                background: msg.role === 'user' ? 'transparent' : 'var(--accent-glow)'
+              }}>
+                {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
               </div>
               <div style={{ 
                 maxWidth: '75%', 
@@ -95,8 +110,18 @@ export default function AIPage() {
           ))}
           {loading && (
             <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-              <div style={{ flexShrink: 0, width: '32px', height: '32px', border: '1px solid var(--accent-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--accent-bright)' }}>
-                AI
+              <div style={{ 
+                flexShrink: 0, 
+                width: '32px', 
+                height: '32px', 
+                border: '1px solid var(--accent-mid)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--accent-bright)',
+                background: 'var(--accent-glow)'
+              }}>
+                <Bot size={14} className="animate-pulse" />
               </div>
               <div className="animate-pulse" style={{ padding: 'var(--space-3)', borderLeft: '2px solid var(--accent-dark)', color: 'var(--text-dim)', fontSize: '12px' }}>
                 PROCESSING...
@@ -118,7 +143,7 @@ export default function AIPage() {
               style={{ fontSize: '12px' }}
             />
             <button type="submit" className="btn btn-primary" disabled={loading || !input.trim()}>
-              TRANSMIT
+              <Send size={14} /> TRANSMIT
             </button>
           </form>
         </div>
