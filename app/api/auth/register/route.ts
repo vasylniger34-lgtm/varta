@@ -41,8 +41,15 @@ export async function POST(req: NextRequest) {
     })
 
     return response
-  } catch (error) {
-    console.error('[REGISTER]', error)
-    return NextResponse.json({ error: 'SYSTEM ERROR' }, { status: 500 })
+  } catch (error: any) {
+    console.error('[REGISTER ERROR]', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    })
+    return NextResponse.json({ 
+      error: 'SYSTEM ERROR', 
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    }, { status: 500 })
   }
 }
