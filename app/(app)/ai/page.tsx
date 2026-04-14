@@ -46,9 +46,10 @@ export default function AIPage() {
       if (data.response) {
         setMessages(prev => [...prev, { role: 'model', text: data.response }])
       } else {
-        setMessages(prev => [...prev, { role: 'model', text: '[ ERR: NO RESPONSE RECIEVED FROM AI CORE ]' }])
+        const errorMsg = data.details ? `[ ERR: ${data.error} — ${data.details} ]` : `[ ERR: NO RESPONSE RECIEVED FROM AI CORE ]`
+        setMessages(prev => [...prev, { role: 'model', text: errorMsg }])
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
       setMessages(prev => [...prev, { role: 'model', text: '[ ERR: NETWORK FAILURE CONNECTING TO AI CORE ]' }])
     } finally {
