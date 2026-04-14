@@ -59,8 +59,15 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ response: text })
-  } catch (error) {
-    console.error('[AI]', error)
-    return NextResponse.json({ error: 'AI CORE UNAVAILABLE' }, { status: 500 })
+  } catch (error: any) {
+    console.error('[AI ERROR]', {
+      message: error.message,
+      stack: error.stack,
+      status: error.status
+    })
+    return NextResponse.json({ 
+      error: 'AI CORE UNAVAILABLE',
+      details: error.message 
+    }, { status: 500 })
   }
 }
