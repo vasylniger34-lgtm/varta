@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
-
 import ClientLayout from '@/components/layout/ClientLayout'
 import BottomNav from '@/components/layout/BottomNav'
 

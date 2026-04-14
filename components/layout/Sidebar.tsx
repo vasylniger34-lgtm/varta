@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useLayout } from './ClientLayout'
 
 const NAV_ITEMS = [
   {
@@ -57,7 +58,6 @@ const NAV_ITEMS = [
   },
 ]
 
-import { useLayout } from './ClientLayout'
 
 export default function Sidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname()

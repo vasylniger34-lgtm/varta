@@ -1,3 +1,7 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useLayout } from './ClientLayout'
 
 export default function Topbar() {
