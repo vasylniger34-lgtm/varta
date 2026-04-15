@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DraggableBoard from '@/components/life/DraggableBoard'
-import { History, Layout, Settings } from 'lucide-react'
+import { History, Layout } from 'lucide-react'
 
 export default function LifePage() {
   const [view, setView] = useState<'board' | 'history'>('board')
@@ -53,7 +53,7 @@ function HistoryView() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/history') // I need to create this API or update api/daily to support list 
+    fetch('/api/history')
       .then(res => res.json())
       .then(data => {
         setHistory(data.days || [])
@@ -103,136 +103,6 @@ function HistoryView() {
           </tbody>
         </table>
       </div>
-    </div>
-  )
-}
-
-import { useEffect } from 'react'
-
-function TaskColumn({ 
-  title, 
-  period,
-  tasks, 
-  onAdd, 
-  onToggle, 
-  onDelete 
-}: { 
-  title: string, 
-  period: 'day'|'week'|'month',
-  tasks: Task[], 
-  onAdd: (title: string) => void,
-  onToggle: (id: string, done: boolean) => void,
-  onDelete: (id: string) => void
-}) {
-  const [newTitle, setNewTitle] = useState('')
-
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <div className="panel-title">{title}</div>
-        <div className="status-badge online">OK</div>
-      </div>
-      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        
-        {tasks.map(task => (
-          <TaskItem 
-            key={task.id} 
-            task={task} 
-            onToggle={onToggle} 
-            onDelete={onDelete} 
-          />
-        ))}
-
-        {tasks.length === 0 && (
-          <div className="text-dim text-xs uppercase" style={{ padding: 'var(--space-2)' }}>
-            NO OP_TARGETS ASSIGNED
-          </div>
-        )}
-
-        <div style={{ marginTop: 'var(--space-4)' }}>
-          <form onSubmit={(e) => { e.preventDefault(); onAdd(newTitle); setNewTitle(''); }} style={{ display: 'flex', gap: '8px' }}>
-            <input 
-              type="text" 
-              className="input-field" 
-              style={{ padding: 'var(--space-2)', fontSize: '12px' }} 
-              placeholder="ENTER TARGET..." 
-              value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
-            />
-            <button type="submit" className="btn btn-primary" style={{ padding: '4px 8px' }}>ADD</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TaskItem({ task, onToggle, onDelete, depth = 0 }: { task: Task, onToggle: (id: string, done: boolean) => void, onDelete: (id: string) => void, depth?: number }) {
-  const [expanded, setExpanded] = useState(false)
-  const hasChildren = task.children && task.children.length > 0
-
-  return (
-    <div>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 'var(--space-3)', 
-        padding: 'var(--space-2) 0',
-        paddingLeft: `${depth * 16}px`,
-        opacity: task.done ? 0.5 : 1,
-        transition: 'opacity var(--transition-fast)'
-      }}>
-        
-        <label className="toggle">
-          <input 
-            type="checkbox" 
-            checked={task.done} 
-            onChange={(e) => onToggle(task.id, e.target.checked)} 
-          />
-          <span className="toggle-slider"></span>
-        </label>
-
-        <span style={{ 
-          flex: 1, 
-          fontSize: 'var(--text-sm)',
-          fontFamily: 'var(--font-mono)',
-          textDecoration: task.done ? 'line-through' : 'none'
-        }}>
-          {task.title}
-        </span>
-
-        {hasChildren && (
-          <button 
-            type="button" 
-            onClick={() => setExpanded(!expanded)}
-            style={{ color: 'var(--text-dim)', padding: '0 4px', fontSize: '10px' }}
-          >
-            {expanded ? '▲' : '▼'}
-          </button>
-        )}
-
-        <button 
-          onClick={() => onDelete(task.id)}
-          style={{ color: 'var(--status-offline-text)', fontSize: '10px', marginLeft: 'auto', padding: '4px' }}
-        >
-          [X]
-        </button>
-
-      </div>
-
-      {expanded && hasChildren && (
-        <div style={{ borderLeft: '1px solid var(--border-default)', marginLeft: `${depth * 16 + 18}px`, paddingLeft: '8px' }}>
-          {task.children!.map(child => (
-            <TaskItem 
-              key={child.id} 
-              task={child} 
-              onToggle={onToggle} 
-              onDelete={onDelete}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }
