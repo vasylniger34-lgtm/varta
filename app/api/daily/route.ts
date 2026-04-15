@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { updateDayStats } from '@/lib/day-logic'

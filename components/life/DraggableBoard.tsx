@@ -15,12 +15,10 @@ interface WidgetData {
   data: any
 }
 
-import { WIDGET_REGISTRY } from '@/lib/widget-registry'
-
 export default function DraggableBoard() {
   const [widgets, setWidgets] = useState<WidgetData[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [dayStatus, setDayStatus] = useState<any>(null)
+  const [dailyData, setDailyData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -37,7 +35,7 @@ export default function DraggableBoard() {
       
       const dayRes = await fetch('/api/daily')
       const dayData = await dayRes.json()
-      setDayStatus(dayData.today)
+      setDailyData(dayData.today)
     } catch (e) {
       console.error('Failed to fetch widgets', e)
     } finally {
@@ -98,13 +96,13 @@ export default function DraggableBoard() {
              <span className="status-badge online">OPERATIONAL</span>
              
              {/* Reaction Logic */}
-             {dayStatus && dayStatus.status !== 'COMPLETED' && (
+             {dailyData && dailyData.status !== 'COMPLETED' && (
                <div style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-bright)' }}>
                    <AlertCircle size={14} />
-                   <span>ATTENTION: DAILY_MISSION_{dayStatus.status} // {dayStatus.status === 'PARTIAL' ? 'STREAK_STABLE' : 'CLOSE_GOALS_TO_MAINTAIN_STREAK'}</span>
+                   <span>ATTENTION: DAILY_MISSION_{dailyData.status} // {dailyData.status === 'PARTIAL' ? 'STREAK_STABLE' : 'CLOSE_GOALS_TO_MAINTAIN_STREAK'}</span>
                </div>
              )}
-             {dayStatus && dayStatus.status === 'COMPLETED' && (
+             {dailyData && dailyData.status === 'COMPLETED' && (
                <div style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
                    <Zap size={14} fill="currentColor" />
                    <span>MISSION_ACCOMPLISHED // STREAK_PROTECTED</span>
@@ -166,6 +164,7 @@ export default function DraggableBoard() {
           </WidgetFrame>
         )
       })}
+      </div>
     </div>
   )
 }

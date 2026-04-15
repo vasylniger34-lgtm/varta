@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { updateDayStats } from '@/lib/day-logic'
@@ -64,14 +65,6 @@ export async function POST(req: NextRequest) {
     },
     include: { children: true },
   })
-
-  // Update Day stats if it's a daily task
-  if (dayId) {
-    await updateDayStats(dayId)
-  }
-
-  return NextResponse.json({ task }, { status: 201 })
-}
 
   // Update Day stats if it's a daily task
   if (dayId) {
