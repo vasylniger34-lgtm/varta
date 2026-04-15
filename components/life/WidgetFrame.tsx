@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, ReactNode } from 'react'
-import { GripVertical, X, Maximize2 } from 'lucide-react'
+import { GripVertical, X } from 'lucide-react'
 import { useEvents } from '@/context/EventContext'
 import { WIDGET_REGISTRY } from '@/lib/widget-registry'
 
@@ -19,7 +19,10 @@ interface WidgetFrameProps {
   onDelete?: (id: string) => void
   isActive?: boolean
   onClick?: () => void
+  bounds?: { width: number; height: number }
 }
+
+const SNAP_SIZE = 20
 
 export default function WidgetFrame({ 
   id, 
@@ -34,7 +37,8 @@ export default function WidgetFrame({
   onResize,
   onDelete,
   isActive,
-  onClick
+  onClick,
+  bounds
 }: WidgetFrameProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -55,6 +59,9 @@ export default function WidgetFrame({
   useEffect(() => {
     setSize({ w, h })
   }, [w, h])
+
+  const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val))
+  const snap = (val: number) => Math.round(val / SNAP_SIZE) * SNAP_SIZE
 
   // DRAG LOGIC
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -86,19 +93,35 @@ export default function WidgetFrame({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        const newX = e.clientX - dragStart.current.x
-        const newY = e.clientY - dragStart.current.y
-        setPosition({ x: newX, y: newY })
+        let newX = e.clientX - dragStart.current.x
+        let newY = e.clientY - dragStart.current.y
+        
+        // Apply Bounds
+        if (bounds) {
+          newX = clamp(newX, 0, bounds.width - size.w)
+          newY = clamp(newY, 0, bounds.height - size.h)
+        }
+
+        setPosition({ x: snap(newX), y: snap(newY) })
       }
 
       if (isResizing) {
         const deltaX = e.clientX - resizeStart.current.x
         const deltaY = e.clientY - resizeStart.current.y
         
-        const newW = Math.max(config.minW, resizeStart.current.w + deltaX)
-        const newH = Math.max(config.minH, resizeStart.current.h + deltaY)
+        let newW = resizeStart.current.w + deltaX
+        let newH = resizeStart.current.h + deltaY
         
-        setSize({ w: newW, h: newH })
+        // Apply Bounds for resizing (cannot resize past container edge)
+        if (bounds) {
+          newW = clamp(newW, config.minW, bounds.width - position.x)
+          newH = clamp(newH, config.minH, bounds.height - position.y)
+        } else {
+          newW = Math.max(config.minW, newW)
+          newH = Math.max(config.minH, newH)
+        }
+        
+        setSize({ w: snap(newW), h: snap(newH) })
       }
     }
 
@@ -124,7 +147,7 @@ export default function WidgetFrame({
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging, isResizing, id, type, onMove, onResize, position, size, config, emitEvent])
+  }, [isDragging, isResizing, id, type, onMove, onResize, position, size, config, emitEvent, bounds])
 
   return (
     <div

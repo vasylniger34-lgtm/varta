@@ -917,13 +917,24 @@ input::placeholder, textarea::placeholder {
 .varta-widget.dragging {
   cursor: grabbing !important;
   transform: scale(1.02);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(185, 28, 28, 0.4); /* Stronger red shadow on drag */
   z-index: 1000 !important;
+  opacity: 0.95;
 }
 
 .varta-widget.active {
   border-color: var(--accent-bright);
-  box-shadow: 0 0 20px var(--accent-glow-strong);
+  box-shadow: 0 0 25px var(--accent-glow-strong);
+}
+
+.board-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 20px 20px; /* Matching SNAP_SIZE */
+  pointer-events: none;
 }
 
 .resize-handle {

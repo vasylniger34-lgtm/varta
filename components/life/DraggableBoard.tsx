@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import WidgetFrame from './WidgetFrame'
 import { WIDGET_REGISTRY } from '@/lib/widget-registry'
-import { AlertCircle, Zap } from 'lucide-react'
+import { AlertCircle, Zap, Plus, X } from 'lucide-react'
+import { useEvents } from '@/context/EventContext'
 
 interface WidgetData {
   id: string
@@ -20,10 +21,25 @@ export default function DraggableBoard() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [dailyData, setDailyData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isAdding, setIsAdding] = useState(false)
+  const [bounds, setBounds] = useState({ width: 0, height: 0 })
+  
+  const boardRef = useRef<HTMLDivElement>(null)
+  const { emitEvent } = useEvents()
 
   useEffect(() => {
     fetchWidgets()
+    updateBounds()
+    window.addEventListener('resize', updateBounds)
+    return () => window.removeEventListener('resize', updateBounds)
   }, [])
+
+  const updateBounds = () => {
+    if (boardRef.current) {
+      const rect = boardRef.current.getBoundingClientRect()
+      setBounds({ width: rect.width, height: rect.height })
+    }
+  }
 
   const fetchWidgets = async () => {
     try {
@@ -59,6 +75,28 @@ export default function DraggableBoard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, w, h })
     })
+  }
+
+  const handleAddWidget = async (type: string) => {
+    const config = WIDGET_REGISTRY[type]
+    const res = await fetch('/api/widgets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        type, 
+        posX: 60, 
+        posY: 60, 
+        w: config?.minW || 300, 
+        h: config?.minH || 250 
+      })
+    })
+    
+    if (res.ok) {
+      const { widget } = await res.json()
+      setWidgets(prev => [...prev, widget])
+      setIsAdding(false)
+      emitEvent('WIDGET_MOVED', { id: widget.id, type: widget.type, status: 'ADDED' })
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -110,28 +148,65 @@ export default function DraggableBoard() {
              )}
         </div>
         
-        <div className="mono text-dim">
-            COORD: {activeId || 'IDLE'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setIsAdding(!isAdding)}
+              className={`btn ${isAdding ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ fontSize: '11px', padding: '4px 12px' }}
+            >
+              {isAdding ? <X size={14} /> : <Plus size={14} />}
+              <span style={{ marginLeft: '6px' }}>{isAdding ? 'CANCEL' : 'ADD WIDGET'}</span>
+            </button>
+
+            {isAdding && (
+               <div className="panel animate-fade-in" style={{ 
+                   position: 'absolute', 
+                   top: '100%', 
+                   right: 0, 
+                   marginTop: '8px', 
+                   width: '200px', 
+                   zIndex: 200,
+                   background: 'var(--bg-surface)',
+                   boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+               }}>
+                  <div className="panel-header" style={{ padding: '8px 12px' }}>
+                    <div className="panel-title" style={{ fontSize: '10px' }}>AVAILABLE MODULES</div>
+                  </div>
+                  <div className="panel-body" style={{ padding: '4px' }}>
+                    {Object.keys(WIDGET_REGISTRY).map(key => (
+                      <button 
+                        key={key} 
+                        onClick={() => handleAddWidget(key)}
+                        className="btn btn-ghost"
+                        style={{ width: '100%', justifyContent: 'flex-start', fontSize: '12px', padding: '8px' }}
+                      >
+                        {WIDGET_REGISTRY[key].defaultTitle}
+                      </button>
+                    ))}
+                  </div>
+               </div>
+            )}
+          </div>
+
+          <div className="mono text-dim">
+              COORD: {activeId || 'IDLE'}
+          </div>
         </div>
       </div>
 
-      <div style={{ 
-        position: 'relative', 
-        flex: 1,
+      <div 
+        ref={boardRef}
+        style={{ 
+          position: 'relative', 
+          flex: 1,
       background: 'radial-gradient(circle at 50% 50%, #0d0d0d 0%, #080808 100%)',
       borderRadius: 'var(--border-radius)',
       border: '1px solid var(--border-default)',
       marginTop: 'var(--space-4)'
     }}>
       {/* Grid Pattern */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: `radial-gradient(var(--border-default) 1px, transparent 1px)`,
-        backgroundSize: '40px 40px',
-        opacity: 0.2,
-        pointerEvents: 'none'
-      }} />
+      <div className="board-grid-pattern" style={{ opacity: 0.2 }} />
 
       {widgets.map(widget => {
         const config = WIDGET_REGISTRY[widget.type] || {}
@@ -152,6 +227,7 @@ export default function DraggableBoard() {
             onDelete={handleDelete}
             isActive={activeId === widget.id}
             onClick={() => setActiveId(widget.id)}
+            bounds={bounds}
           >
             {WidgetComponent ? (
                <WidgetComponent 
