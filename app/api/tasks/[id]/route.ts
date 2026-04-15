@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { updateDayStats } from '@/lib/day-logic'
 
 export async function PATCH(
   req: NextRequest,
@@ -49,23 +49,4 @@ export async function DELETE(
   }
 
   return NextResponse.json({ success: true })
-}
-
-async function updateDayStats(dayId: string) {
-  const tasks = await prisma.task.findMany({
-    where: { dayId, parentId: null }
-  })
-
-  const total = tasks.length
-  const completed = tasks.filter(t => t.done).length
-  const isCompleted = total > 0 && total === completed
-
-  await prisma.day.update({
-    where: { id: dayId },
-    data: {
-      totalTasks: total,
-      completedTasks: completed,
-      isCompleted
-    }
-  })
 }

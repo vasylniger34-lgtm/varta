@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { updateDayStats } from '@/lib/day-logic'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -80,9 +80,18 @@ export async function POST(req: NextRequest) {
   const streakRecord = await prisma.streak.findUnique({ where: { userId } })
 
   if (lastDay) {
-    // If last day was not completed, reset streak
-    if (lastDay.isCompleted) {
+    // New Streak Logic:
+    // COMPLETED -> +1
+    // PARTIAL -> No change (persist)
+    // FAILED -> Reset to 0
+    
+    const wasCompleted = lastDay.status === 'COMPLETED'
+    const wasPartial = lastDay.status === 'PARTIAL'
+    
+    if (wasCompleted) {
       currentStreak = (streakRecord?.current || 0) + 1
+    } else if (wasPartial) {
+      currentStreak = (streakRecord?.current || 0)
     } else {
       currentStreak = 0
     }
@@ -102,6 +111,9 @@ export async function POST(req: NextRequest) {
     data: {
       userId,
       date: todayDate,
+      status: 'FAILED',
+      completionPercentage: 0,
+      totalTasks: lastDay ? lastDay.tasks.length : 0,
     }
   })
 

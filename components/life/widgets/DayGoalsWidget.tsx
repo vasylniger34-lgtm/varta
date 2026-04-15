@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, CheckCircle2, Circle, Trash2, Zap } from 'lucide-react'
+import { useEvents } from '@/context/EventContext'
 
 export default function DayGoalsWidget() {
   const [day, setDay] = useState<any>(null)
@@ -9,6 +10,7 @@ export default function DayGoalsWidget() {
   const [newTitle, setNewTitle] = useState('')
   const [loading, setLoading] = useState(true)
   const [isResetting, setIsResetting] = useState(false)
+  const { emitEvent } = useEvents()
 
   useEffect(() => {
     fetchDayData()
@@ -65,16 +67,23 @@ export default function DayGoalsWidget() {
     
     if (res.ok) {
         setNewTitle('')
+        emitEvent('TASK_CREATED', { title: newTitle })
         fetchDayData() // Refresh stats
     }
   }
 
   const handleToggle = async (taskId: string, done: boolean) => {
     // Optimistic update
-    setDay((prev: any) => ({
-      ...prev,
-      tasks: prev.tasks.map((t: any) => t.id === taskId ? { ...t, done } : t)
-    }))
+    setDay((prev: any) => {
+      const updatedTasks = prev.tasks.map((t: any) => t.id === taskId ? { ...t, done } : t)
+      const completed = updatedTasks.filter((t: any) => t.done).length
+      const total = updatedTasks.length
+      
+      if (done) emitEvent('TASK_COMPLETED', { taskId, title: updatedTasks.find((t: any) => t.id === taskId).title })
+      if (completed === total && total > 0) emitEvent('DAY_COMPLETED', { dayId: day.id })
+
+      return { ...prev, tasks: updatedTasks }
+    })
 
     await fetch(`/api/tasks/${taskId}`, {
       method: 'PATCH',

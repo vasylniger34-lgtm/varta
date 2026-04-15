@@ -1,6 +1,7 @@
 import React from 'react'
 import type { Metadata } from 'next'
 import './globals.css'
+import { EventProvider } from '@/context/EventContext'
 
 export const metadata: Metadata = {
   title: 'VARTA — Control System',
@@ -15,7 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uk">
-      <body>{children}</body>
+      <body>
+        <EventProvider>
+          {children}
+        </EventProvider>
+      </body>
     </html>
   )
 }

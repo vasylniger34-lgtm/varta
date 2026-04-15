@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { updateDayStats } from '@/lib/day-logic'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -73,22 +73,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ task }, { status: 201 })
 }
 
-async function updateDayStats(dayId: string) {
-  const tasks = await prisma.task.findMany({
-    where: { dayId, parentId: null } // Only top-level tasks count for XP usually? Or all? 
-    // Let's assume top-level tasks are the "goals".
-  })
+  // Update Day stats if it's a daily task
+  if (dayId) {
+    await updateDayStats(dayId)
+  }
 
-  const total = tasks.length
-  const completed = tasks.filter(t => t.done).length
-  const isCompleted = total > 0 && total === completed
-
-  await prisma.day.update({
-    where: { id: dayId },
-    data: {
-      totalTasks: total,
-      completedTasks: completed,
-      isCompleted
-    }
-  })
+  return NextResponse.json({ task }, { status: 201 })
 }

@@ -899,3 +899,54 @@ input::placeholder, textarea::placeholder {
     padding: var(--space-6);
   }
 }
+
+/* ═══════════════════════════════════════════
+   WIDGET ENHANCEMENTS
+   ═══════════════════════════════════════════ */
+
+.varta-widget {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: default;
+}
+
+.varta-widget:hover {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.varta-widget.dragging {
+  cursor: grabbing !important;
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  z-index: 1000 !important;
+}
+
+.varta-widget.active {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 20px var(--accent-glow-strong);
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 15px;
+  height: 15px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--text-dim) 50%);
+  opacity: 0.3;
+  transition: opacity var(--transition-fast);
+}
+
+.resize-handle:hover {
+  opacity: 1;
+  background: linear-gradient(135deg, transparent 50%, var(--accent-bright) 50%);
+}
+
+.grab-handle {
+  cursor: grab;
+}
+
+.grab-handle:active {
+  cursor: grabbing;
+}

@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
   if (widgets.length === 0) {
     const defaultWidgets = [
       { type: 'DAY_GOALS', posX: 40, posY: 40, w: 320, h: 450, userId: session.userId },
-      { type: 'NOTES', posX: 400, posY: 40, w: 300, h: 250, userId: session.userId }
+      { type: 'NOTES', posX: 400, posY: 40, w: 300, h: 250, userId: session.userId },
+      { type: 'GOAL', posX: 400, posY: 320, w: 300, h: 240, userId: session.userId }
     ]
     const created = []
     for (const w of defaultWidgets) {
