@@ -96,8 +96,8 @@ export default function WidgetFrame({
         let newX = e.clientX - dragStart.current.x
         let newY = e.clientY - dragStart.current.y
         
-        // Apply Bounds
-        if (bounds) {
+        // Apply Bounds only if they are properly measured
+        if (bounds && bounds.width > 0 && bounds.height > 0) {
           newX = clamp(newX, 0, bounds.width - size.w)
           newY = clamp(newY, 0, bounds.height - size.h)
         }
@@ -113,7 +113,7 @@ export default function WidgetFrame({
         let newH = resizeStart.current.h + deltaY
         
         // Apply Bounds for resizing (cannot resize past container edge)
-        if (bounds) {
+        if (bounds && bounds.width > 0 && bounds.height > 0) {
           newW = clamp(newW, config.minW, bounds.width - position.x)
           newH = clamp(newH, config.minH, bounds.height - position.y)
         } else {
