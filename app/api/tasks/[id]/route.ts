@@ -23,6 +23,10 @@ export async function PATCH(
     },
   })
 
+  if (updated.dayId) {
+    await updateDayStats(updated.dayId)
+  }
+
   return NextResponse.json({ task: updated })
 }
 
@@ -40,5 +44,28 @@ export async function DELETE(
 
   await prisma.task.delete({ where: { id: params.id } })
 
+  if (task.dayId) {
+    await updateDayStats(task.dayId)
+  }
+
   return NextResponse.json({ success: true })
+}
+
+async function updateDayStats(dayId: string) {
+  const tasks = await prisma.task.findMany({
+    where: { dayId, parentId: null }
+  })
+
+  const total = tasks.length
+  const completed = tasks.filter(t => t.done).length
+  const isCompleted = total > 0 && total === completed
+
+  await prisma.day.update({
+    where: { id: dayId },
+    data: {
+      totalTasks: total,
+      completedTasks: completed,
+      isCompleted
+    }
+  })
 }

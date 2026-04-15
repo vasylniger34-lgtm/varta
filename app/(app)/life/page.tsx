@@ -1,121 +1,113 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-
-type Task = {
-  id: string
-  title: string
-  period: 'day' | 'week' | 'month'
-  done: boolean
-  children?: Task[]
-}
+import { useState } from 'react'
+import DraggableBoard from '@/components/life/DraggableBoard'
+import { History, Layout, Settings } from 'lucide-react'
 
 export default function LifePage() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchTasks()
-  }, [])
-
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch('/api/tasks?period=day') // will be enhanced later to fetch all or via tabs
-      const data = await res.json()
-      if (data.tasks) setTasks(data.tasks)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAddTask = async (title: string, period: 'day' | 'week' | 'month') => {
-    if (!title.trim()) return
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, period }),
-    })
-    if (res.ok) fetchTasks()
-  }
-
-  const handleToggleTask = async (id: string, done: boolean) => {
-    // optimistic UI
-    setTasks(prev => updateTaskInTree(prev, id, { done }))
-    
-    await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ done }),
-    })
-  }
-
-  const handleDeleteTask = async (id: string) => {
-    setTasks(prev => removeTaskFromTree(prev, id))
-    await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
-  }
-
-  const updateTaskInTree = (taskList: Task[], id: string, props: Partial<Task>): Task[] => {
-    return taskList.map(t => {
-      if (t.id === id) return { ...t, ...props }
-      if (t.children) return { ...t, children: updateTaskInTree(t.children, id, props) }
-      return t
-    })
-  }
-
-  const removeTaskFromTree = (taskList: Task[], id: string): Task[] => {
-    return taskList.filter(t => t.id !== id).map(t => {
-      if (t.children) return { ...t, children: removeTaskFromTree(t.children, id) }
-      return t
-    })
-  }
+  const [view, setView] = useState<'board' | 'history'>('board')
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <div className="page-label">MODULE_LIFE // OPERATIONAL</div>
-        <h1 className="page-title">LIFE MANAGEMENT AREA</h1>
-        <div className="page-desc">Tactical timeline control & active operations tracking.</div>
+    <div className="animate-fade-in" style={{ height: 'calc(100vh - var(--topbar-height) - var(--space-6) * 2)', display: 'flex', flexDirection: 'column' }}>
+      <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div className="page-label">MODULE_LIFE // OPERATIONAL</div>
+            <h1 className="page-title">LIFE BOARD</h1>
+            <div className="page-desc">VARTA Life OS Core — Tactical board and daily mission control.</div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => setView('board')} 
+              className={`btn ${view === 'board' ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ padding: '8px 12px' }}
+            >
+              <Layout size={16} />
+              <span style={{ marginLeft: '8px' }}>BOARD</span>
+            </button>
+            <button 
+              onClick={() => setView('history')} 
+              className={`btn ${view === 'history' ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ padding: '8px 12px' }}
+            >
+              <History size={16} />
+              <span style={{ marginLeft: '8px' }}>HISTORY</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      {loading ? (
-           <div className="text-dim">SYNCING MODULE...</div>
-      ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', 
-          gap: 'var(--space-6)' 
-        }}>
-          <TaskColumn 
-            title="DAY / TACTICAL" 
-            period="day" 
-            tasks={tasks.filter(t => t.period === 'day')} 
-            onAdd={t => handleAddTask(t, 'day')}
-            onToggle={handleToggleTask}
-            onDelete={handleDeleteTask}
-          />
-          <TaskColumn 
-            title="WEEK / STRATEGIC" 
-            period="week" 
-            tasks={tasks.filter(t => t.period === 'week')} 
-            onAdd={t => handleAddTask(t, 'week')}
-            onToggle={handleToggleTask}
-            onDelete={handleDeleteTask}
-          />
-          <TaskColumn 
-            title="MONTH / GLOBAL" 
-            period="month" 
-            tasks={tasks.filter(t => t.period === 'month')} 
-            onAdd={t => handleAddTask(t, 'month')}
-            onToggle={handleToggleTask}
-            onDelete={handleDeleteTask}
-          />
-        </div>
-      )}
+      <div style={{ flex: 1, position: 'relative' }}>
+        {view === 'board' ? (
+          <DraggableBoard />
+        ) : (
+          <HistoryView />
+        )}
+      </div>
     </div>
   )
 }
+
+function HistoryView() {
+  const [history, setHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/history') // I need to create this API or update api/daily to support list 
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data.days || [])
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return <div className="text-dim p-8">RECALLING ARCHIVES...</div>
+
+  return (
+    <div className="panel" style={{ height: '100%', overflowY: 'auto' }}>
+      <div className="panel-header">
+        <div className="panel-title">MISSION LOGS / HISTORY</div>
+      </div>
+      <div className="panel-body">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-default)', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
+              <th style={{ padding: '12px' }}>DATE</th>
+              <th style={{ padding: '12px' }}>TASKS</th>
+              <th style={{ padding: '12px' }}>XP</th>
+              <th style={{ padding: '12px' }}>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map(day => (
+              <tr key={day.id} style={{ borderBottom: '1px solid var(--border-default)', fontSize: '13px' }}>
+                <td style={{ padding: '12px' }}>{new Date(day.date).toLocaleDateString()}</td>
+                <td style={{ padding: '12px' }}>{day.completedTasks} / {day.totalTasks}</td>
+                <td style={{ padding: '12px' }}>
+                    <div style={{ width: '100px', height: '4px', background: 'var(--bg-elevated)', borderRadius: '2px' }}>
+                        <div style={{ width: `${day.totalTasks > 0 ? (day.completedTasks/day.totalTasks)*100 : 0}%`, height: '100%', background: 'var(--accent-bright)' }} />
+                    </div>
+                </td>
+                <td style={{ padding: '12px' }}>
+                  <span className={`status-badge ${day.isCompleted ? 'online' : 'offline'}`}>
+                    {day.isCompleted ? 'COMPLETED' : 'FAILED'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {history.length === 0 && (
+              <tr>
+                <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>NO ARCHIVAL DATA FOUND</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+import { useEffect } from 'react'
 
 function TaskColumn({ 
   title, 
