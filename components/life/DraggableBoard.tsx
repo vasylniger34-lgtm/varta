@@ -272,12 +272,14 @@ export default function DraggableBoard() {
         ref={boardRef}
         style={{ 
           position: 'relative', 
-          flex: 1,
-      background: 'radial-gradient(circle at 50% 50%, #0d0d0d 0%, #080808 100%)',
-      borderRadius: 'var(--border-radius)',
-      border: '1px solid var(--border-default)',
-      marginTop: 'var(--space-4)'
-    }}>
+          minHeight: '2000px',
+          width: '100%',
+          background: 'radial-gradient(circle at 50% 50%, #0d0d0d 0%, #080808 100%)',
+          borderRadius: 'var(--border-radius)',
+          border: '1px solid var(--border-default)',
+          marginTop: 'var(--space-4)',
+          overflow: 'hidden'
+        }}>
       {/* Grid Pattern */}
       <div className="board-grid-pattern" style={{ opacity: 0.2 }} />
 
