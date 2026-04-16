@@ -99,6 +99,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, activeTasks })
       }
 
+      case 'sync_chat': {
+        const { text, role } = payload
+        const msg = await prisma.chatMessage.create({
+          data: {
+            text,
+            role: role.toUpperCase(), // USER or MODEL
+            userId: targetUserId
+          }
+        })
+        return NextResponse.json({ success: true, messageId: msg.id })
+      }
+
       default:
         return NextResponse.json({ error: 'UNKNOWN_ACTION' }, { status: 400 })
     }

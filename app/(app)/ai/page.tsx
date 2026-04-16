@@ -27,6 +27,22 @@ export default function AIPage() {
     scrollToBottom()
   }, [messages])
 
+  // Load History on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('/api/ai/history')
+        const data = await res.json()
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages)
+        }
+      } catch (e) {
+        console.error('Failed to load history', e)
+      }
+    }
+    fetchHistory()
+  }, [])
+
   // Initialize Speech Recognition
   useEffect(() => {
     if (typeof window !== 'undefined') {

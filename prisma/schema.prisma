@@ -23,6 +23,18 @@ model User {
   widgets      Widget[]
   goals        Goal[]
   eventLogs    EventLog[]
+  chatMessages ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  text      String
+  role      String   // "USER" | "MODEL"
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Task {

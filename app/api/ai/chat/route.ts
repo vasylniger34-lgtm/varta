@@ -107,7 +107,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 2. Initial Context
+    // 2. Initial Context + History Loading
+    const lastMessages = await prisma.chatMessage.findMany({
+      where: { userId: session.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 12, // Sliding window for tokens
+    })
+    
+    // Reverse to get chronological order for Gemini
+    const chatHistory = lastMessages.reverse().map(m => ({
+      role: m.role === 'USER' ? 'user' : 'model',
+      parts: [{ text: m.text }],
+    }))
+
     const activeTasks = await prisma.task.findMany({
       where: { userId: session.userId, done: false },
       take: 15,
@@ -121,23 +133,18 @@ Active Tasks Context: ${activeTasks.map(t => `[${t.id}] ${t.title}`).join(', ')}
 `
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-2.0-flash-lite',
       systemInstruction: SYSTEM_PROMPT + contextAddition,
       tools,
     })
 
-    const chat = model.startChat({ 
-      history: (history || []).map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }],
-      }))
-    })
+    const chat = model.startChat({ history: chatHistory })
 
     let result = await chat.sendMessage(message)
     let responseText = result.response.text()
     let responseParts = result.response.candidates?.[0].content.parts || []
 
-    // 3. Handle Function Calls (One level for simplicity)
+    // 3. Handle Function Calls
     const functionCall = responseParts.find(p => p.functionCall)
     if (functionCall) {
       const { name, args }: any = functionCall.functionCall
@@ -155,7 +162,7 @@ Active Tasks Context: ${activeTasks.map(t => `[${t.id}] ${t.title}`).join(', ')}
           const newTask = await prisma.task.create({
             data: {
               title: args.title,
-              period: args.period,
+              period: args.period || 'day',
               userId: session.userId,
               dayId: args.dayId || (args.period === 'day' ? dayEntry.id : null),
               order: 0
@@ -194,21 +201,46 @@ Active Tasks Context: ${activeTasks.map(t => `[${t.id}] ${t.title}`).join(', ')}
       responseText = result.response.text()
     }
 
-    // Clean response text from Markdown if Gemini hallucinations occur
-    const cleanJson = responseText.replace(/```json\n?|\n?```/g, '').trim()
-    const jsonResponse = JSON.parse(cleanJson)
-
-    // Log the interaction
+    // 4. ROBUST JSON EXTRACTION
+    let jsonResponse
     try {
-      await prisma.systemLog.create({
-        data: {
-          message: `AI [${jsonResponse.intent}]: "${message.substring(0, 60)}"`,
-          level: 'INFO',
-          userId: session.userId,
-        },
-      })
-    } catch (logError) {
-      console.error('[LOG ERROR]', logError)
+      // Clean markdown blocks first
+      const cleanJson = responseText.replace(/```json\n?|\n?```/g, '').trim()
+      
+      // If result is still not JSON, try to find JSON block { ... }
+      const jsonMatch = cleanJson.match(/\{[\s\S]*\}/)
+      const finalJsonString = jsonMatch ? jsonMatch[0] : cleanJson
+      
+      jsonResponse = JSON.parse(finalJsonString)
+    } catch (parseError) {
+      console.warn('[AI PARSE FALLBACK] Response was not valid JSON:', responseText)
+      jsonResponse = {
+        intent: 'chat',
+        payload: { text: responseText },
+        response: responseText
+      }
+    }
+
+    // 5. PERSISTENCE: Save messages to DB for unified history
+    try {
+      await prisma.$transaction([
+        prisma.chatMessage.create({
+          data: { text: message, role: 'USER', userId: session.userId }
+        }),
+        prisma.chatMessage.create({
+          data: { text: jsonResponse.response || responseText, role: 'MODEL', userId: session.userId }
+        }),
+        // Also log to system log
+        prisma.systemLog.create({
+          data: {
+            message: `AI [${jsonResponse.intent}]: "${message.substring(0, 60)}"`,
+            level: 'INFO',
+            userId: session.userId,
+          },
+        })
+      ])
+    } catch (dbError) {
+      console.error('[CHAT PERSISTENCE ERROR]', dbError)
     }
 
     return NextResponse.json(jsonResponse)
