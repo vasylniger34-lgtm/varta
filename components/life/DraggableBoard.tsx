@@ -129,7 +129,7 @@ export default function DraggableBoard() {
   if (loading) return <div className="text-dim p-8">INITIALIZING BOARD...</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minHeight: '100%' }}>
       
       {/* System Status Bar / Reactions */}
       <div style={{ 
