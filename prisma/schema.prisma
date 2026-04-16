@@ -88,9 +88,12 @@ model Goal {
   id           String   @id @default(cuid())
   title        String
   type         String   // "money" | "task" | "habit"
-  style        String   @default("CLASSIC") // New field for visualization
+  style        String   @default("CLASSIC")
+  color        String?  @default("#ff0000")
+  icon         String?  @default("Target")
   targetValue  Float
   currentValue Float    @default(0)
+  history      Json?    // Array of { date: string, value: number }
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   userId       String

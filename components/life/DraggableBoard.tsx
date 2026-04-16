@@ -191,7 +191,7 @@ export default function DraggableBoard() {
                     {selectionStep === 'MAIN' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {Object.keys(WIDGET_REGISTRY).map(key => (
-                          <button 
+                            <button 
                             key={key} 
                             onClick={() => {
                                 if (key === 'GOAL') {
@@ -201,10 +201,20 @@ export default function DraggableBoard() {
                                 }
                             }}
                             className="btn btn-ghost"
-                            style={{ width: '100%', justifyContent: 'flex-start', fontSize: '12px', padding: '8px' }}
+                            style={{ 
+                                width: '100%', 
+                                justifyContent: 'flex-start', 
+                                fontSize: '11px', 
+                                padding: '10px 12px',
+                                border: key === 'GOAL' ? '1px solid var(--accent-dark)' : '1px solid transparent',
+                                background: key === 'GOAL' ? 'rgba(255,0,0,0.05)' : 'transparent'
+                            }}
                           >
-                            <Plus size={12} style={{ marginRight: '8px' }} />
-                            {WIDGET_REGISTRY[key].defaultTitle}
+                            <Plus size={12} style={{ marginRight: '8px', color: key === 'GOAL' ? 'var(--accent-bright)' : 'inherit' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <span style={{ fontWeight: 800 }}>{WIDGET_REGISTRY[key].defaultTitle}</span>
+                                {key === 'GOAL' && <span style={{ fontSize: '8px', opacity: 0.5 }}>SELECT VISUAL_STYLE // 8 OPTIONS</span>}
+                            </div>
                           </button>
                         ))}
                       </div>

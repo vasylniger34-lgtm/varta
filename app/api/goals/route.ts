@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
-  const { title, type, targetValue, currentValue, style } = await req.json()
+  const { title, type, targetValue, currentValue, style, color, icon } = await req.json()
   
   if (!title || !type || targetValue === undefined) {
     return NextResponse.json({ error: 'MISSING FIELDS' }, { status: 400 })
@@ -30,8 +30,11 @@ export async function POST(req: NextRequest) {
       title,
       type,
       style: style || 'CLASSIC',
+      color: color || '#ff0000',
+      icon: icon || 'Target',
       targetValue: parseFloat(targetValue),
-      currentValue: parseFloat(currentValue || 0)
+      currentValue: parseFloat(currentValue || 0),
+      history: []
     }
   })
 
@@ -55,8 +58,11 @@ export async function PATCH(req: NextRequest) {
       ...(updates.title && { title: updates.title }),
       ...(updates.type && { type: updates.type }),
       ...(updates.style && { style: updates.style }),
+      ...(updates.color && { color: updates.color }),
+      ...(updates.icon && { icon: updates.icon }),
       ...(updates.targetValue !== undefined && { targetValue: parseFloat(updates.targetValue) }),
       ...(updates.currentValue !== undefined && { currentValue: parseFloat(updates.currentValue) }),
+      ...(updates.history && { history: updates.history }),
     }
   })
 
