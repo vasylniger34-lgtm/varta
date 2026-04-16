@@ -13,16 +13,25 @@ export async function POST(req: NextRequest) {
   try {
     const { action, payload, userId } = await req.json()
     
-    // For local assistant, we might need to target a specific user
-    // Since this is a personal board, we use the first user if userId is not provided
+    // For local assistant, we prioritize the owner email
     let targetUserId = userId
     if (!targetUserId) {
-      const firstUser = await prisma.user.findFirst()
-      targetUserId = firstUser?.id
+      if (process.env.VARTA_OWNER_EMAIL) {
+        const owner = await prisma.user.findUnique({
+          where: { email: process.env.VARTA_OWNER_EMAIL }
+        })
+        targetUserId = owner?.id
+      }
+      
+      // Fallback to first user if no owner email or user not found
+      if (!targetUserId) {
+        const firstUser = await prisma.user.findFirst()
+        targetUserId = firstUser?.id
+      }
     }
 
     if (!targetUserId) {
-      return NextResponse.json({ error: 'NO_USER_FOUND' }, { status: 404 })
+      return NextResponse.json({ error: 'USER_NOT_FOUND', details: 'No valid user for sync' }, { status: 404 })
     }
 
     console.log(`[BOARD BRIDGE] Action: ${action}`, payload)
