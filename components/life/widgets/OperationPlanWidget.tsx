@@ -57,93 +57,106 @@ export default function OperationPlanWidget({ widgetId, initialData }: any) {
     : 0
 
   return (
-    <div className="flex flex-col h-full bg-black/40 p-4 space-y-4 font-mono select-none">
+    <div className="flex flex-col h-full bg-black/40 p-5 space-y-6 font-mono select-none border border-white/5 rounded-xl">
       
       {/* Header & Progress */}
-      <div className="space-y-2">
-         <div className="flex justify-between items-center group">
-            {isEditingTitle ? (
-              <input 
-                className="bg-transparent border-b border-accent-bright text-accent-bright outline-none w-full text-sm font-bold"
-                value={title}
-                onChange={e => setTitle(e.target.value.toUpperCase())}
-                onBlur={() => setIsEditingTitle(false)}
-                autoFocus
-                onKeyDown={e => e.key === 'Enter' && setIsEditingTitle(false)}
-              />
-            ) : (
-              <div 
-                className="text-sm font-black tracking-tighter text-white flex items-center gap-2 cursor-pointer hover:text-accent-bright transition-colors"
-                onClick={() => setIsEditingTitle(true)}
-              >
-                <Target size={14} className="text-accent-bright" />
-                {title}
-                <Edit3 size={10} className="opacity-0 group-hover:opacity-100" />
-              </div>
-            )}
-            <div className="text-xl font-black italic text-accent-bright">{progress}%</div>
+      <div className="space-y-4">
+         <div className="flex justify-between items-start group">
+            <div className="flex-1">
+              {isEditingTitle ? (
+                <input 
+                  className="bg-transparent border-b-2 border-accent-bright text-accent-bright outline-none w-full text-xl font-black"
+                  value={title}
+                  onChange={e => setTitle(e.target.value.toUpperCase())}
+                  onBlur={() => setIsEditingTitle(false)}
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && setIsEditingTitle(false)}
+                />
+              ) : (
+                <div 
+                  className="text-2xl font-black tracking-tighter text-white flex items-center gap-3 cursor-pointer hover:text-accent-bright transition-all group/title"
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  <div className="p-2 rounded-lg bg-accent-bright/10 border border-accent-bright/20">
+                    <Target size={20} className="text-accent-bright" />
+                  </div>
+                  <span>{title}</span>
+                  <Edit3 size={14} className="opacity-0 group-hover/title:opacity-100 text-dim" />
+                </div>
+              )}
+            </div>
+            <div className="text-3xl font-black italic text-accent-bright drop-shadow-[0_0_10px_rgba(255,0,0,0.3)]">{progress}%</div>
          </div>
 
          {/* Cyber Progress Bar */}
-         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 flex gap-0.5 p-0.5">
+         <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 flex p-0.5 relative">
             <div 
-              className="h-full bg-accent-bright transition-all duration-700 ease-out"
-              style={{ width: `${progress}%`, boxShadow: `0 0 15px var(--accent-bright)` }}
+              className="h-full bg-accent-bright transition-all duration-1000 cubic-bezier(0.16, 1, 0.3, 1)"
+              style={{ width: `${progress}%`, boxShadow: `0 0 20px var(--accent-bright)` }}
             />
-            {progress < 100 && (
-                <div className="flex-1 bg-white/5 animate-pulse" />
-            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer pointer-events-none" />
          </div>
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
         {tasks.map(task => (
            <div 
              key={task.id} 
-             className={`flex items-center gap-3 p-2 rounded border border-transparent transition-all hover:bg-white/[0.03] hover:border-white/5 group ${task.done ? 'opacity-40' : ''}`}
+             onClick={() => toggleTask(task.id)}
+             className={`flex items-center gap-4 p-3 rounded-lg border transition-all duration-300 cursor-pointer group
+               ${task.done 
+                 ? 'bg-black/20 border-white/5 opacity-50' 
+                 : 'bg-white/[0.03] border-white/10 hover:border-accent-bright/40 hover:bg-white/[0.06] shadow-lg'
+               }`}
            >
-              <button 
-                onClick={() => toggleTask(task.id)}
-                className="text-accent-bright hover:scale-110 transition-transform"
+              <div 
+                className={`flex-shrink-0 w-6 h-6 rounded flex items-center justify-center border-2 transition-all
+                  ${task.done 
+                    ? 'bg-accent-bright border-accent-bright text-black' 
+                    : 'border-white/20 text-transparent group-hover:border-accent-bright'
+                  }`}
               >
-                {task.done ? <CheckSquare size={16} /> : <Square size={16} />}
-              </button>
-              <span className={`text-[11px] flex-1 ${task.done ? 'line-through text-dim' : 'text-white/80'}`}>
+                {task.done && <CheckSquare size={16} strokeWidth={3} />}
+              </div>
+              
+              <span className={`text-xs font-bold flex-1 ${task.done ? 'line-through text-dim' : 'text-white/90'}`}>
                 {task.text}
               </span>
+
               <button 
-                onClick={() => removeTask(task.id)}
-                className="opacity-0 group-hover:opacity-100 text-dim hover:text-red-500 transition-all"
+                onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}
+                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-md text-dim hover:text-red-500 transition-all"
               >
-                <Trash2 size={12} />
+                <Trash2 size={14} />
               </button>
            </div>
         ))}
 
         {tasks.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
-             <Plus size={32} />
-             <div className="text-[10px] mt-2">AWAITING_OBJECTIVES</div>
+          <div className="h-full flex flex-col items-center justify-center opacity-30 py-16 border-2 border-dashed border-white/5 rounded-xl">
+             <div className="text-[10px] mono uppercase tracking-[0.2em] font-bold">MISSING_OBJECTIVES_IN_PLAN</div>
           </div>
         )}
       </div>
 
-      {/* Input */}
-      <form onSubmit={addTask} className="relative mt-auto">
-         <input 
-           className="w-full bg-white/5 border border-white/10 rounded p-2 pl-3 pr-10 text-[10px] text-white outline-none focus:border-accent-bright transition-colors"
-           placeholder="ADD_CHECKPOINT..."
-           value={newTaskText}
-           onChange={e => setNewTaskText(e.target.value)}
-         />
-         <button 
-           type="submit"
-           className="absolute right-2 top-1/2 -translate-y-1/2 text-accent-bright hover:text-white transition-colors"
-         >
-           <ChevronRight size={16} />
-         </button>
-      </form>
+      {/* Input Section */}
+      <div className="pt-4 border-t border-white/5">
+        <form onSubmit={addTask} className="relative">
+           <input 
+             className="w-full bg-white/[0.03] border border-white/10 rounded-lg py-3 px-4 text-xs text-white outline-none focus:border-accent-bright focus:bg-white/[0.06] transition-all placeholder:text-dim/50 font-bold"
+             placeholder="ENTER NEW CHECKPOINT..."
+             value={newTaskText}
+             onChange={e => setNewTaskText(e.target.value)}
+           />
+           <button 
+             type="submit"
+             className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-accent-bright rounded-md text-black hover:scale-110 transition-transform active:scale-95"
+           >
+             <ChevronRight size={18} strokeWidth={3} />
+           </button>
+        </form>
+      </div>
     </div>
   )
 }
