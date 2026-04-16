@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { updateDayStats } from '@/lib/day-logic'
 
 export async function POST(req: NextRequest) {
-  const bridgeKey = req.headers.get('x-varta-bridge-key')
+  const bridgeKey = req.headers.get('x-varta-bridge-key')?.trim()
+  const expectedKey = process.env.VARTA_BRIDGE_KEY?.trim()
   
-  if (!bridgeKey || bridgeKey !== process.env.VARTA_BRIDGE_KEY) {
+  if (!bridgeKey || bridgeKey !== expectedKey) {
     return NextResponse.json({ error: 'UNAUTHORIZED_BRIDGE' }, { status: 401 })
   }
 
