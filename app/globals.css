@@ -337,6 +337,45 @@ input::placeholder, textarea::placeholder {
   z-index: 50;
 }
 
+/* ═══════════════════════════════════════════
+   WIDGET SYSTEM SPECIALS
+   ═══════════════════════════════════════════ */
+
+.varta-widget {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.varta-widget.active {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--border-default) 50%);
+  z-index: 100;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.varta-widget:hover .resize-handle {
+  opacity: 1;
+  background: linear-gradient(135deg, transparent 50%, var(--accent-bright) 50%);
+}
+
+.grab-handle {
+  cursor: grab;
+}
+
+.grab-handle:active {
+  cursor: grabbing;
+}
+
 .topbar-title {
   font-size: var(--text-sm);
   font-weight: 700;

@@ -179,8 +179,8 @@ export default function DraggableBoard() {
                    top: '100%', 
                    right: 0, 
                    marginTop: '8px', 
-                   width: '200px', 
-                   zIndex: 200,
+                   width: '240px', 
+                   zIndex: 1000,
                    background: 'var(--bg-surface)',
                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                }}>
