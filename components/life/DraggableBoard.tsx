@@ -87,7 +87,8 @@ export default function DraggableBoard() {
         posX: 60, 
         posY: 60, 
         w: config?.minW || 300, 
-        h: config?.minH || 250 
+        h: config?.minH || 250,
+        data: config?.data || {}
       })
     })
     

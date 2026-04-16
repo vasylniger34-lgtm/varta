@@ -6,10 +6,17 @@ import { useEvents } from '@/context/EventContext'
 
 const STYLES = ['CLASSIC', 'CIRCLE', 'THERMOMETER', 'DIGITAL', 'HUD', 'SEGMENTS', 'ROAD', 'SPARKLINE']
 
-export default function GoalWidget() {
+export default function GoalWidget({ initialData }: { initialData?: any }) {
   const [goals, setGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
+  
+  // Form State
+  const [newTitle, setNewTitle] = useState('')
+  const [newTarget, setNewTarget] = useState(100)
+  const [newStyle, setNewStyle] = useState(initialData?.style || 'CLASSIC')
+
   const { emitEvent } = useEvents()
 
   useEffect(() => {
@@ -25,6 +32,38 @@ export default function GoalWidget() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddGoal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTitle.trim()) return
+
+    const res = await fetch('/api/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        title: newTitle, 
+        targetValue: newTarget, 
+        style: newStyle,
+        type: 'task' // default
+      })
+    })
+
+    if (res.ok) {
+        const { goal } = await res.json()
+        setGoals(prev => [goal, ...prev])
+        setNewTitle('')
+        setIsAdding(false)
+    }
+  }
+
+  const handleDeleteGoal = async (id: string) => {
+    if (confirm('Видалити цю ціль?')) {
+        const res = await fetch(`/api/goals?id=${id}`, { method: 'DELETE' })
+        if (res.ok) {
+            setGoals(prev => prev.filter(g => g.id !== id))
+        }
     }
   }
 
@@ -58,68 +97,131 @@ export default function GoalWidget() {
   if (loading) return <div className="text-dim text-xs p-4 animate-pulse">SYNCING STRATEGIC_TARGETS...</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-      {goals.length === 0 && (
-        <div className="text-dim text-xs text-center py-8">NO ACTIVE GOALS</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', position: 'relative' }}>
+      
+      {/* Widget Header Tool */}
+      <div style={{ position: 'absolute', top: '-35px', right: '40px', zIndex: 10 }}>
+         <button 
+           onClick={() => setIsAdding(!isAdding)} 
+           className="btn btn-ghost" 
+           style={{ padding: '4px 8px', fontSize: '10px' }}
+         >
+            {isAdding ? <X size={12} /> : <Plus size={12} />}
+            <span style={{ marginLeft: '4px' }}>{isAdding ? 'CLOSE' : 'ADD_GOAL'}</span>
+         </button>
+      </div>
+
+      {/* Add Goal Form */}
+      {isAdding && (
+          <form onSubmit={handleAddGoal} className="panel animate-slide-down" style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--accent-dark)', marginBottom: '10px' }}>
+              <input 
+                className="input-field" 
+                placeholder="GOAL TITLE..." 
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                style={{ marginBottom: '8px', fontSize: '11px' }}
+              />
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                 <div style={{ flex: 1 }}>
+                    <div className="text-dim" style={{ fontSize: '9px', marginBottom: '2px' }}>TARGET</div>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={newTarget}
+                      onChange={e => setNewTarget(parseFloat(e.target.value))}
+                      style={{ fontSize: '11px' }}
+                    />
+                 </div>
+                 <div style={{ flex: 1 }}>
+                    <div className="text-dim" style={{ fontSize: '9px', marginBottom: '2px' }}>STYLE</div>
+                    <select 
+                      className="input-field" 
+                      value={newStyle}
+                      onChange={e => setNewStyle(e.target.value)}
+                      style={{ fontSize: '11px', height: '32px' }}
+                    >
+                      {STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                 </div>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '6px', fontSize: '11px' }}>INITIALIZE GOAL</button>
+          </form>
+      )}
+
+      {goals.length === 0 && !isAdding && (
+        <div className="text-dim text-xs text-center py-8">NO ACTIVE GOALS // CONSOLE_EMPTY</div>
       )}
       
-      {goals.map(goal => {
-        const progress = Math.min(100, (goal.currentValue / goal.targetValue) * 100)
-        const style = goal.style || 'CLASSIC'
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
+        {goals.map(goal => {
+          const progress = Math.min(100, (goal.currentValue / goal.targetValue) * 100)
+          const style = goal.style || 'CLASSIC'
 
-        return (
-          <div key={goal.id} className="goal-container animate-fade-in" style={{ 
-              position: 'relative',
-              padding: '16px', 
-              background: 'var(--bg-elevated)', 
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--border-radius)',
-              overflow: 'hidden'
-          }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Target size={14} className="text-accent" />
-                <span className="text-xs font-bold uppercase mono letter-spacing-1">{goal.title}</span>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                 <button onClick={() => cycleStyle(goal)} className="text-dim hover:text-accent-bright" title="Switch View Mode">
-                    <Activity size={12} />
-                 </button>
-                 <button onClick={() => setEditingId(editingId === goal.id ? null : goal.id)} className="text-dim hover:text-primary">
-                    <Edit3 size={12} />
-                 </button>
-              </div>
-            </div>
-
-            {/* Content based on Style */}
-            <div className="goal-content">
-               {renderGoalStyle(style, goal, progress)}
-            </div>
-
-            {/* Quick Edit Footer */}
-            {editingId === goal.id && (
-                <div className="animate-slide-up" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-default)', display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="number"
-                      className="input-field"
-                      style={{ padding: '4px 8px', fontSize: '11px', flex: 1 }}
-                      defaultValue={goal.currentValue}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleUpdate(goal.id, parseFloat((e.target as HTMLInputElement).value))
-                          setEditingId(null)
-                        }
-                      }}
-                    />
-                    <button className="btn btn-primary" style={{ padding: '4px 8px' }}>
-                       <Check size={14} />
-                    </button>
+          return (
+            <div key={goal.id} className="goal-container animate-fade-in" style={{ 
+                position: 'relative',
+                padding: '16px', 
+                background: 'var(--bg-elevated)', 
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--border-radius)',
+                overflow: 'hidden'
+            }}>
+              {/* Item Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Target size={14} className="text-accent" />
+                  <span className="text-xs font-bold uppercase mono letter-spacing-1">{goal.title}</span>
                 </div>
-            )}
-          </div>
-        )
-      })}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                   <button onClick={() => cycleStyle(goal)} className="text-dim hover:text-accent-bright" title="Cycle View Style">
+                      <Activity size={12} />
+                   </button>
+                   <button onClick={() => setEditingId(editingId === goal.id ? null : goal.id)} className="text-dim hover:text-primary">
+                      <Edit3 size={12} />
+                   </button>
+                   <button onClick={() => handleDeleteGoal(goal.id)} className="text-dim hover:text-red-500">
+                      <X size={12} />
+                   </button>
+                </div>
+              </div>
+
+              {/* Content based on Style */}
+              <div className="goal-content">
+                 {renderGoalStyle(style, goal, progress)}
+              </div>
+
+              {/* Quick Edit Footer */}
+              {editingId === goal.id && (
+                  <div className="animate-slide-up" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-default)', display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="number"
+                        className="input-field"
+                        style={{ padding: '4px 8px', fontSize: '11px', flex: 1 }}
+                        defaultValue={goal.currentValue}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleUpdate(goal.id, parseFloat((e.target as HTMLInputElement).value))
+                            setEditingId(null)
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                            const input = document.querySelector(`input[defaultValue="${goal.currentValue}"]`) as HTMLInputElement
+                            if(input) handleUpdate(goal.id, parseFloat(input.value))
+                            setEditingId(null)
+                        }}
+                        className="btn btn-primary" 
+                        style={{ padding: '4px 8px' }}
+                      >
+                         <Check size={14} />
+                      </button>
+                  </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
