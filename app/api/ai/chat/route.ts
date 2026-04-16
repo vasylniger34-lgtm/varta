@@ -198,16 +198,18 @@ Active Tasks Context: ${activeTasks.map(t => `[${t.id}] ${t.title}`).join(', ')}
     const cleanJson = responseText.replace(/```json\n?|\n?```/g, '').trim()
     const jsonResponse = JSON.parse(cleanJson)
 
-    return NextResponse.json(jsonResponse)
-
     // Log the interaction
-    await prisma.systemLog.create({
-      data: {
-        message: `AI [${jsonResponse.intent}]: "${message.substring(0, 60)}"`,
-        level: 'INFO',
-        userId: session.userId,
-      },
-    })
+    try {
+      await prisma.systemLog.create({
+        data: {
+          message: `AI [${jsonResponse.intent}]: "${message.substring(0, 60)}"`,
+          level: 'INFO',
+          userId: session.userId,
+        },
+      })
+    } catch (logError) {
+      console.error('[LOG ERROR]', logError)
+    }
 
     return NextResponse.json(jsonResponse)
   } catch (error: any) {
