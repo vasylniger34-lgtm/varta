@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import WidgetFrame from './WidgetFrame'
 import { WIDGET_REGISTRY } from '@/lib/widget-registry'
-import { AlertCircle, Zap, Plus, X } from 'lucide-react'
+import { AlertCircle, Zap, Plus, X, Activity, Thermometer, Hash, TrendingUp } from 'lucide-react'
 import { useEvents } from '@/context/EventContext'
 
 interface WidgetData {
