@@ -228,30 +228,28 @@ export default function DraggableBoard() {
                           <ChevronLeft size={12} /> BACK TO MODULES
                         </button>
                         <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: '1fr 1fr', 
-                            gap: '8px' 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '2px' 
                         }}>
                           {GOAL_TEMPLATES.map(tpl => (
                             <button 
                               key={tpl.id}
-                              onClick={() => handleAddWidget('GOAL', { style: tpl.id })}
-                              className="panel animate-fade-in"
+                              onClick={() => handleAddWidget('GOAL', { style: tpl.id, setup: true })}
+                              className="btn btn-ghost"
                               style={{ 
-                                  padding: '8px', 
-                                  cursor: 'pointer', 
-                                  background: 'var(--bg-elevated)', 
-                                  border: '1px solid var(--border-default)',
-                                  textAlign: 'center',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  gap: '4px'
+                                  width: '100%',
+                                  justifyContent: 'flex-start',
+                                  fontSize: '11px', 
+                                  padding: '8px 12px',
+                                  gap: '12px'
                               }}
                             >
                                <div style={{ color: 'var(--accent-bright)' }}>{tpl.icon}</div>
-                               <div style={{ fontSize: '9px', fontWeight: 900 }} className="mono">{tpl.id}</div>
-                               <div style={{ fontSize: '8px', opacity: 0.6 }}>{tpl.desc}</div>
+                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                 <span style={{ fontWeight: 700 }} className="mono">{tpl.name}</span>
+                                 <span style={{ fontSize: '8px', opacity: 0.5 }}>{tpl.desc}</span>
+                               </div>
                             </button>
                           ))}
                         </div>
@@ -303,6 +301,7 @@ export default function DraggableBoard() {
             isActive={activeId === widget.id}
             onClick={() => setActiveId(widget.id)}
             bounds={bounds}
+            hideHeader={widget.type === 'GOAL' && widget.data?.minimalMode}
           >
             {WidgetComponent ? (
                <WidgetComponent 

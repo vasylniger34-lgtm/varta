@@ -20,6 +20,7 @@ interface WidgetFrameProps {
   isActive?: boolean
   onClick?: () => void
   bounds?: { width: number; height: number }
+  hideHeader?: boolean
 }
 
 const SNAP_SIZE = 20
@@ -38,7 +39,8 @@ export default function WidgetFrame({
   onDelete,
   isActive,
   onClick,
-  bounds
+  bounds,
+  hideHeader
 }: WidgetFrameProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -165,23 +167,32 @@ export default function WidgetFrame({
         flexDirection: 'column',
       }}
     >
-      <div 
-        className="panel-header drag-handle grab-handle" 
-        onMouseDown={handleMouseDown}
-        style={{ userSelect: 'none' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <GripVertical size={14} className="text-dim" />
-          <div className="panel-title">{title}</div>
+      {(!hideHeader || isActive) && (
+        <div 
+          className="panel-header drag-handle grab-handle animate-fade-in" 
+          onMouseDown={handleMouseDown}
+          style={{ 
+              userSelect: 'none',
+              background: hideHeader ? 'rgba(8,8,8,0.9)' : undefined,
+              borderBottom: hideHeader ? '1px solid var(--accent-dark)' : undefined,
+              position: hideHeader ? 'absolute' : 'relative',
+              top: 0, left: 0, right: 0,
+              zIndex: 10
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <GripVertical size={14} className="text-dim" />
+            <div className="panel-title">{title}</div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {onDelete && (
+               <button onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="text-dim hover:text-accent">
+                 <X size={14} />
+               </button>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {onDelete && (
-             <button onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="text-dim hover:text-accent">
-               <X size={14} />
-             </button>
-          )}
-        </div>
-      </div>
+      )}
       
       <div className="panel-body" style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
         {children}
