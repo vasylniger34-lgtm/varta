@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Bot, User, Send, Sparkles, Command } from 'lucide-react'
+import { Bot, User, Send, Sparkles, Command, Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
 
 type Message = {
   role: 'user' | 'model'
@@ -14,7 +14,10 @@ export default function AIPage() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<any>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -23,6 +26,68 @@ export default function AIPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition()
+        recognitionRef.current.continuous = false
+        recognitionRef.current.interimResults = false
+        recognitionRef.current.lang = 'uk-UA'
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript
+          setInput(transcript)
+          setIsListening(false)
+        }
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error)
+          setIsListening(false)
+        }
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false)
+        }
+      }
+    }
+  }, [])
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+    } else {
+      if (!recognitionRef.current) {
+        alert('Голосове введення не підтримується цим браузером.')
+        return
+      }
+      recognitionRef.current.start()
+      setIsListening(true)
+    }
+  }
+
+  const speak = (text: string) => {
+    if (!isVoiceEnabled || typeof window === 'undefined') return
+    
+    // Cancel previous speech
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'uk-UA'
+    
+    // Try to find a good Ukrainian voice
+    const voices = window.speechSynthesis.getVoices()
+    const ukVoice = voices.find(v => v.lang.startsWith('uk'))
+    if (ukVoice) utterance.voice = ukVoice
+    
+    utterance.rate = 1.0
+    utterance.pitch = 1.0
+    
+    window.speechSynthesis.speak(utterance)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,6 +110,11 @@ export default function AIPage() {
       
       if (data.response) {
         setMessages(prev => [...prev, { role: 'model', text: data.response }])
+        
+        // Озвучування відповіді
+        if (isVoiceEnabled) {
+          speak(data.response)
+        }
         
         // NEURAL STITCHING: Якщо інтент - це дія (не просто чат), відправляємо на локальний ПК
         if (data.intent && data.intent !== 'chat') {
@@ -90,6 +160,22 @@ export default function AIPage() {
             <Command size={12} /> AI FEED
           </div>
           <div className="status-badge online">LINK STABLE</div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
+            <button 
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                color: isVoiceEnabled ? 'var(--accent-bright)' : 'var(--text-dim)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              title={isVoiceEnabled ? 'Виключити звук' : 'Включити звук'}
+            >
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+          </div>
         </div>
         
         <div className="panel-body" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
@@ -152,14 +238,44 @@ export default function AIPage() {
 
         <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`mic-btn ${isListening ? 'active' : ''}`}
+              style={{
+                background: isListening ? 'var(--accent-glow)' : 'transparent',
+                border: '1px solid',
+                borderColor: isListening ? 'var(--accent-bright)' : 'var(--border-default)',
+                color: isListening ? 'var(--accent-bright)' : 'var(--text-dim)',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                position: 'relative'
+              }}
+            >
+              {isListening ? <Mic size={18} className="animate-pulse" /> : <MicOff size={18} />}
+              {isListening && (
+                <span className="mic-ripple" style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  border: '1px solid var(--accent-bright)',
+                  borderRadius: '0',
+                  animation: 'ripple 1.5s infinite ease-out'
+                }} />
+              )}
+            </button>
             <input 
               type="text" 
               className="input-field" 
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="ENTER COMMAND..." 
+              placeholder={isListening ? "LISTENING..." : "ENTER COMMAND..."} 
               disabled={loading}
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '12px', flex: 1 }}
             />
             <button type="submit" className="btn btn-primary" disabled={loading || !input.trim()}>
               <Send size={14} /> TRANSMIT
