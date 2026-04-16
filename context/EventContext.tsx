@@ -10,6 +10,8 @@ export type SystemEventType =
   | 'STREAK_UPDATED' 
   | 'WIDGET_MOVED'
   | 'WIDGET_RESIZED'
+  | 'WIDGET_UPDATED'
+  | 'WIDGET_CREATED'
   | 'GOAL_UPDATED'
 
 interface SystemEvent {
