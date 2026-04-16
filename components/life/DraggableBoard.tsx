@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import WidgetFrame from './WidgetFrame'
 import { WIDGET_REGISTRY } from '@/lib/widget-registry'
-import { AlertCircle, Zap, Plus, X, Activity, Thermometer, Hash, TrendingUp } from 'lucide-react'
+import { AlertCircle, Zap, Plus, X, Activity, Thermometer, Hash, TrendingUp, ChevronLeft } from 'lucide-react'
 import { useEvents } from '@/context/EventContext'
 
 interface WidgetData {
@@ -187,17 +187,66 @@ export default function DraggableBoard() {
                   <div className="panel-header" style={{ padding: '8px 12px' }}>
                     <div className="panel-title" style={{ fontSize: '10px' }}>AVAILABLE MODULES</div>
                   </div>
-                  <div className="panel-body" style={{ padding: '4px' }}>
-                    {Object.keys(WIDGET_REGISTRY).map(key => (
-                      <button 
-                        key={key} 
-                        onClick={() => handleAddWidget(key)}
-                        className="btn btn-ghost"
-                        style={{ width: '100%', justifyContent: 'flex-start', fontSize: '12px', padding: '8px' }}
-                      >
-                        {WIDGET_REGISTRY[key].defaultTitle}
-                      </button>
-                    ))}
+                  <div className="panel-body" style={{ padding: '8px' }}>
+                    {selectionStep === 'MAIN' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {Object.keys(WIDGET_REGISTRY).map(key => (
+                          <button 
+                            key={key} 
+                            onClick={() => {
+                                if (key === 'GOAL') {
+                                    setSelectionStep('GOAL_STYLES')
+                                } else {
+                                    handleAddWidget(key)
+                                }
+                            }}
+                            className="btn btn-ghost"
+                            style={{ width: '100%', justifyContent: 'flex-start', fontSize: '12px', padding: '8px' }}
+                          >
+                            <Plus size={12} style={{ marginRight: '8px' }} />
+                            {WIDGET_REGISTRY[key].defaultTitle}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <button 
+                          onClick={() => setSelectionStep('MAIN')}
+                          className="btn btn-ghost"
+                          style={{ width: '100%', fontSize: '10px', padding: '4px', borderBottom: '1px solid var(--border-default)', marginBottom: '4px' }}
+                        >
+                          <ChevronLeft size={12} /> BACK TO MODULES
+                        </button>
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '1fr 1fr', 
+                            gap: '8px' 
+                        }}>
+                          {GOAL_TEMPLATES.map(tpl => (
+                            <button 
+                              key={tpl.id}
+                              onClick={() => handleAddWidget('GOAL', { style: tpl.id })}
+                              className="panel animate-fade-in"
+                              style={{ 
+                                  padding: '8px', 
+                                  cursor: 'pointer', 
+                                  background: 'var(--bg-elevated)', 
+                                  border: '1px solid var(--border-default)',
+                                  textAlign: 'center',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                              }}
+                            >
+                               <div style={{ color: 'var(--accent-bright)' }}>{tpl.icon}</div>
+                               <div style={{ fontSize: '9px', fontWeight: 900 }} className="mono">{tpl.id}</div>
+                               <div style={{ fontSize: '8px', opacity: 0.6 }}>{tpl.desc}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                </div>
             )}
