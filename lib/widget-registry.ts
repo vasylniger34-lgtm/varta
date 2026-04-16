@@ -2,6 +2,7 @@ import DayGoalsWidget from '@/components/life/widgets/DayGoalsWidget'
 import NotesWidget from '@/components/life/widgets/NotesWidget'
 import GoalWidget from '@/components/life/widgets/GoalWidget'
 import HabitsWidget from '@/components/life/widgets/HabitsWidget'
+import OperationPlanWidget from '@/components/life/widgets/OperationPlanWidget'
 
 export const WIDGET_REGISTRY: Record<string, any> = {
   'DAY_GOALS': {
@@ -27,5 +28,11 @@ export const WIDGET_REGISTRY: Record<string, any> = {
     defaultTitle: 'HABIT LOOP',
     minW: 260,
     minH: 380
+  },
+  'OPERATION_PLAN': {
+    component: OperationPlanWidget,
+    defaultTitle: 'OPERATION_PLAN',
+    minW: 300,
+    minH: 400
   }
 }

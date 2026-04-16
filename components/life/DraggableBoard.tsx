@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import WidgetFrame from './WidgetFrame'
 import { WIDGET_REGISTRY } from '@/lib/widget-registry'
-import { AlertCircle, Zap, Plus, X, Activity, Thermometer, Hash, TrendingUp, ChevronLeft } from 'lucide-react'
+import { AlertCircle, Zap, Plus, X, Activity, Thermometer, Hash, TrendingUp, ChevronLeft, ClipboardList, Shield, Target, Edit3 } from 'lucide-react'
 import { useEvents } from '@/context/EventContext'
 
 interface WidgetData {
@@ -210,11 +210,18 @@ export default function DraggableBoard() {
                                 background: key === 'GOAL' ? 'rgba(255,0,0,0.05)' : 'transparent'
                             }}
                           >
-                            <Plus size={12} style={{ marginRight: '8px', color: key === 'GOAL' ? 'var(--accent-bright)' : 'inherit' }} />
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                <span style={{ fontWeight: 800 }}>{WIDGET_REGISTRY[key].defaultTitle}</span>
-                                {key === 'GOAL' && <span style={{ fontSize: '8px', opacity: 0.5 }}>SELECT VISUAL_STYLE // 8 OPTIONS</span>}
-                            </div>
+                             <div style={{ marginRight: '12px', color: 'var(--accent-bright)' }}>
+                                {key === 'GOAL' && <Target size={14} />}
+                                {key === 'DAY_GOALS' && <Activity size={14} />}
+                                {key === 'NOTES' && <Edit3 size={14} />}
+                                {key === 'HABITS' && <Zap size={14} />}
+                                {key === 'OPERATION_PLAN' && <Shield size={14} />}
+                             </div>
+                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                 <span style={{ fontWeight: 800 }}>{WIDGET_REGISTRY[key].defaultTitle}</span>
+                                 {key === 'GOAL' && <span style={{ fontSize: '8px', opacity: 0.5 }}>SELECT VISUAL_STYLE // 8 OPTIONS</span>}
+                                 {key === 'OPERATION_PLAN' && <span style={{ fontSize: '8px', opacity: 0.5 }}>MULTIPLE CHECKPOINTS // PROGRESS TRACKER</span>}
+                             </div>
                           </button>
                         ))}
                       </div>
