@@ -21,11 +21,23 @@ export default function DraggableBoard() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [dailyData, setDailyData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [isAdding, setIsAdding] = useState(false)
-  const [bounds, setBounds] = useState({ width: 0, height: 0 })
-  
-  const boardRef = useRef<HTMLDivElement>(null)
-  const { emitEvent } = useEvents()
+    const [isAdding, setIsAdding] = useState(false)
+    const [selectionStep, setSelectionStep] = useState<'MAIN' | 'GOAL_STYLES'>('MAIN')
+    const [bounds, setBounds] = useState({ width: 0, height: 0 })
+    
+    const boardRef = useRef<HTMLDivElement>(null)
+    const { emitEvent } = useEvents()
+
+    const GOAL_TEMPLATES = [
+      { id: 'HUD', name: 'CYBER HUD', icon: <Activity size={18} />, desc: 'System metrics style' },
+      { id: 'CIRCLE', name: 'RADIAL DISK', icon: <Zap size={18} />, desc: 'Circular progress' },
+      { id: 'THERMOMETER', name: 'THERMO SCALE', icon: <Thermometer size={18} />, desc: 'Vertical accumulation' },
+      { id: 'DIGITAL', name: 'MATRIX COUNT', icon: <Hash size={18} />, desc: 'High-contrast digital' },
+      { id: 'SEGMENTS', name: 'BLOCKS', icon: <AlertCircle size={18} />, desc: 'Discrete segments' },
+      { id: 'ROAD', name: 'ROADMAP', icon: <Zap size={18} />, desc: 'Linear progression' },
+      { id: 'SPARKLINE', name: 'TREND LINE', icon: <TrendingUp size={18} />, desc: 'Growth visualization' },
+      { id: 'CLASSIC', name: 'CLASSIC BAR', icon: <Plus size={18} />, desc: 'Standard progress' },
+    ]
 
   useEffect(() => {
     fetchWidgets()
@@ -77,7 +89,7 @@ export default function DraggableBoard() {
     })
   }
 
-  const handleAddWidget = async (type: string) => {
+  const handleAddWidget = async (type: string, data: any = {}) => {
     const config = WIDGET_REGISTRY[type]
     const res = await fetch('/api/widgets', {
       method: 'POST',
@@ -88,7 +100,7 @@ export default function DraggableBoard() {
         posY: 60, 
         w: config?.minW || 300, 
         h: config?.minH || 250,
-        data: config?.data || {}
+        data: { ...(config?.data || {}), ...data }
       })
     })
     
@@ -96,6 +108,7 @@ export default function DraggableBoard() {
       const { widget } = await res.json()
       setWidgets(prev => [...prev, widget])
       setIsAdding(false)
+      setSelectionStep('MAIN')
       emitEvent('WIDGET_MOVED', { id: widget.id, type: widget.type, status: 'ADDED' })
     }
   }
