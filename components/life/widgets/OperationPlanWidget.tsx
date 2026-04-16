@@ -104,33 +104,34 @@ export default function OperationPlanWidget({ widgetId, initialData }: any) {
            <div 
              key={task.id} 
              onClick={() => toggleTask(task.id)}
-             className={`flex flex-row items-center gap-5 p-4 rounded-xl border transition-all duration-300 cursor-pointer group
+             className={`flex flex-row flex-nowrap items-center gap-6 p-4 rounded-2xl border transition-all duration-300 cursor-pointer group
                ${task.done 
                  ? 'bg-black/40 border-white/5' 
-                 : 'bg-white/[0.04] border-white/10 hover:border-accent-bright/50 hover:bg-white/[0.08] shadow-2xl'
+                 : 'bg-white/[0.05] border-white/10 hover:border-accent-bright/50 hover:bg-white/[0.08] shadow-2xl'
                }`}
            >
-              {/* Checkbox on the LEFT */}
+              {/* Checkbox: Always on the left, hollow border, just a checkmark when done */}
               <div 
-                className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all duration-500
+                className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all duration-300
                   ${task.done 
-                    ? 'bg-accent-bright border-accent-bright text-black shadow-[0_0_15px_var(--accent-bright)]' 
-                    : 'border-white/30 text-transparent group-hover:border-accent-bright'
+                    ? 'border-accent-bright bg-accent-bright/10 shadow-[0_0_15px_rgba(255,0,0,0.2)]' 
+                    : 'border-white/30 bg-transparent group-hover:border-accent-bright/50'
                   }`}
               >
-                {task.done && <CheckSquare size={20} strokeWidth={3} />}
+                {task.done && <CheckSquare size={20} className="text-accent-bright" strokeWidth={3} />}
               </div>
               
-              {/* Larger Text with Strike-through */}
-              <span className={`text-lg font-bold flex-1 transition-all duration-500 ${task.done ? 'line-through text-dim opacity-40' : 'text-white'}`}>
+              {/* Larger Text with readable strike-through (not black) */}
+              <span className={`text-xl font-black flex-1 transition-all duration-500 truncate
+                ${task.done ? 'line-through text-white/40 italic' : 'text-white'}`}>
                 {task.text}
               </span>
 
               <button 
                 onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}
-                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-lg text-dim hover:text-red-500 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-xl text-dim hover:text-red-500 transition-all flex-shrink-0"
               >
-                <Trash2 size={18} />
+                <Trash2 size={20} />
               </button>
            </div>
         ))}
