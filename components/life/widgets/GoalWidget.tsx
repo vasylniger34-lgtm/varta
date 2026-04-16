@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Target, TrendingUp, Edit3, DollarSign, Check, ChevronRight, ChevronLeft, Zap, Thermometer, Hash, Activity } from 'lucide-react'
+import { Target, TrendingUp, Edit3, DollarSign, Check, ChevronRight, ChevronLeft, Zap, Thermometer, Hash, Activity, X, Plus } from 'lucide-react'
 import { useEvents } from '@/context/EventContext'
 
 const STYLES = ['CLASSIC', 'CIRCLE', 'THERMOMETER', 'DIGITAL', 'HUD', 'SEGMENTS', 'ROAD', 'SPARKLINE']
