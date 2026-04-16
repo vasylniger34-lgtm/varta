@@ -6,19 +6,20 @@ import DraggableBoard from '../life/DraggableBoard'
 
 export default function MobileLifeView() {
   const [isLandscape, setIsLandscape] = useState(false)
+  const [viewMode, setViewMode] = useState<'SUMMARY' | 'BOARD'>('SUMMARY')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight)
-    }
+    const mediaQuery = window.matchMedia('(orientation: landscape)')
+    setIsLandscape(mediaQuery.matches)
+
+    const handler = (e: MediaQueryListEvent) => setIsLandscape(e.matches)
+    mediaQuery.addEventListener('change', handler)
     
-    checkOrientation()
-    window.addEventListener('resize', checkOrientation)
     fetchData()
 
-    return () => window.removeEventListener('resize', checkOrientation)
+    return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
   const fetchData = async () => {
@@ -47,17 +48,51 @@ export default function MobileLifeView() {
     }
   }
 
-  if (isLandscape) {
-    return (
-      <div className="mobile-landscape-board">
+  // Common Board Component
+  const renderBoard = () => (
+    <div className={isLandscape ? "landscape-board-wrapper" : "mobile-pannable-container"}>
+      <div className={isLandscape ? "" : "mobile-pannable-board"}>
         <DraggableBoard />
+      </div>
+      <style jsx>{`
+        .landscape-board-wrapper {
+          width: 100vw;
+          height: 100vh;
+          background: var(--bg-base);
+          overflow: auto;
+        }
+      `}</style>
+    </div>
+  )
+
+  if (isLandscape || viewMode === 'BOARD') {
+    return (
+      <div className="mobile-board-view">
+        {viewMode === 'BOARD' && !isLandscape && (
+          <div className="board-toolbar">
+            <button onClick={() => setViewMode('SUMMARY')} className="back-to-summary">
+              [ BACK_TO_SUMMARY ]
+            </button>
+          </div>
+        )}
+        {renderBoard()}
         <style jsx>{`
-          .mobile-landscape-board {
-            width: 100vw;
-            height: 100vh;
-            background: var(--bg-base);
+          .mobile-board-view {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+          .board-toolbar {
             padding: 10px;
-            overflow: auto;
+            background: rgba(0,0,0,0.8);
+            border-bottom: 1px solid var(--border-default);
+          }
+          .back-to-summary {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            color: var(--accent-bright);
+            text-transform: uppercase;
           }
         `}</style>
       </div>
@@ -73,7 +108,12 @@ export default function MobileLifeView() {
     <div className="mobile-portrait-life">
       <div className="life-header">
         <h2 className="mono uppercase tracking-widest text-accent">Module_Life // Board</h2>
-        <button onClick={fetchData} className="text-dim"><RefreshCw size={14} /></button>
+        <div className="flex gap-4">
+            <button onClick={() => setViewMode('BOARD')} className="text-accent text-xs mono underline">
+                FULL_BOARD
+            </button>
+            <button onClick={fetchData} className="text-dim"><RefreshCw size={14} /></button>
+        </div>
       </div>
 
       {/* Streak Card */}
@@ -142,6 +182,8 @@ export default function MobileLifeView() {
           align-items: center;
           margin-bottom: 20px;
         }
+        .flex { display: flex; }
+        .gap-4 { gap: 16px; }
         .streak-num {
           font-size: 48px;
           font-weight: 800;

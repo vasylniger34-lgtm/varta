@@ -11,7 +11,7 @@ type MobileBottomNavProps = {
 const NAV_ITEMS = [
   { id: 'HOME', icon: Home, label: 'BASE' },
   { id: 'LIFE', icon: Layout, label: 'BOARD' },
-  { id: 'AI', icon: Sparkles, label: 'VARTA' },
+  { id: 'AI', icon: Sparkles, label: 'AI_CORE' },
   { id: 'CHAT', icon: MessageSquare, label: 'COMMS' },
   { id: 'SETTINGS', icon: Settings, label: 'SYSTEM' },
 ]
