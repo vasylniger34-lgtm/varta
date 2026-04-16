@@ -41,8 +41,12 @@ export async function POST(req: NextRequest) {
     })
 
     return response
-  } catch (error) {
-    console.error('[LOGIN]', error)
-    return NextResponse.json({ error: 'SYSTEM ERROR' }, { status: 500 })
+  } catch (error: any) {
+    console.error('[LOGIN ERROR]', error)
+    return NextResponse.json({ 
+      error: 'SYSTEM ERROR', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 })
   }
 }

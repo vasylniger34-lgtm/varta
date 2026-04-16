@@ -42,14 +42,11 @@ export async function POST(req: NextRequest) {
 
     return response
   } catch (error: any) {
-    console.error('[REGISTER ERROR]', {
-      message: error.message,
-      stack: error.stack,
-      code: error.code
-    })
+    console.error('[REGISTER ERROR]', error)
     return NextResponse.json({ 
       error: 'SYSTEM ERROR', 
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
     }, { status: 500 })
   }
 }
