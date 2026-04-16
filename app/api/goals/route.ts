@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
-  const { title, type, targetValue, currentValue } = await req.json()
+  const { title, type, targetValue, currentValue, style } = await req.json()
   
   if (!title || !type || targetValue === undefined) {
     return NextResponse.json({ error: 'MISSING FIELDS' }, { status: 400 })
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       userId: session.userId,
       title,
       type,
+      style: style || 'CLASSIC',
       targetValue: parseFloat(targetValue),
       currentValue: parseFloat(currentValue || 0)
     }
@@ -53,6 +54,7 @@ export async function PATCH(req: NextRequest) {
     data: {
       ...(updates.title && { title: updates.title }),
       ...(updates.type && { type: updates.type }),
+      ...(updates.style && { style: updates.style }),
       ...(updates.targetValue !== undefined && { targetValue: parseFloat(updates.targetValue) }),
       ...(updates.currentValue !== undefined && { currentValue: parseFloat(updates.currentValue) }),
     }

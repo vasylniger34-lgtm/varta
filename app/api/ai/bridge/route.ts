@@ -111,6 +111,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, messageId: msg.id })
       }
 
+      case 'create_habit': {
+        const { title, duration } = payload
+        const habit = await prisma.habit.create({
+          data: {
+            title,
+            duration: duration || 15,
+            userId: targetUserId
+          }
+        })
+        return NextResponse.json({ success: true, habitId: habit.id })
+      }
+
       default:
         return NextResponse.json({ error: 'UNKNOWN_ACTION' }, { status: 400 })
     }

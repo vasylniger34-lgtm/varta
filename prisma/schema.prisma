@@ -22,6 +22,7 @@ model User {
   streaks      Streak?
   widgets      Widget[]
   goals        Goal[]
+  habits       Habit[]
   eventLogs    EventLog[]
   chatMessages ChatMessage[]
 }
@@ -69,10 +70,25 @@ model Day {
   @@unique([userId, date])
 }
 
+
+model Habit {
+  id            String   @id @default(cuid())
+  title         String
+  duration      Int      @default(15) // In minutes
+  streak        Int      @default(0)
+  lastCompleted DateTime?
+  createdAt     DateTime @default(now())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Goal {
   id           String   @id @default(cuid())
   title        String
   type         String   // "money" | "task" | "habit"
+  style        String   @default("CLASSIC") // New field for visualization
   targetValue  Float
   currentValue Float    @default(0)
   createdAt    DateTime @default(now())
