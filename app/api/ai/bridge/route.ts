@@ -38,17 +38,17 @@ export async function POST(req: NextRequest) {
 
     switch (action) {
       case 'create_task': {
-        // Find or create today's Day
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        // Find or create today's Day (using exact same logic as daily/route.ts)
+        const now = new Date()
+        const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
         
         let dayEntry = await prisma.day.findUnique({
-          where: { userId_date: { userId: targetUserId, date: today } }
+          where: { userId_date: { userId: targetUserId, date: todayDate } }
         })
         
         if (!dayEntry) {
           dayEntry = await prisma.day.create({
-            data: { userId: targetUserId, date: today }
+            data: { userId: targetUserId, date: todayDate }
           })
         }
 
