@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
-  const { title, type, targetValue, currentValue, style, color, icon } = await req.json()
+  const { title, category, targetValue, currentValue, visualStyle, status } = await req.json()
   
-  if (!title || !type || targetValue === undefined) {
+  if (!title || targetValue === undefined) {
     return NextResponse.json({ error: 'MISSING FIELDS' }, { status: 400 })
   }
 
@@ -28,13 +28,12 @@ export async function POST(req: NextRequest) {
     data: {
       userId: session.userId,
       title,
-      type,
-      style: style || 'CLASSIC',
-      color: color || '#ff0000',
-      icon: icon || 'Target',
+      category: category || 'PERSONAL',
+      visualStyle: visualStyle || 'PROGRESS_BAR',
+      status: status || 'ACTIVE',
       targetValue: parseFloat(targetValue),
       currentValue: parseFloat(currentValue || 0),
-      history: []
+      progressPercent: Math.round((parseFloat(currentValue || 0) / parseFloat(targetValue)) * 100)
     }
   })
 
@@ -52,17 +51,22 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'NOT FOUND' }, { status: 404 })
   }
 
+  // Calculate new progress percent if values change
+  const newTarget = updates.targetValue !== undefined ? parseFloat(updates.targetValue) : goal.targetValue;
+  const newCurrent = updates.currentValue !== undefined ? parseFloat(updates.currentValue) : goal.currentValue;
+  const progressPercent = Math.round((newCurrent / newTarget) * 100);
+
   const updated = await prisma.goal.update({
     where: { id },
     data: {
       ...(updates.title && { title: updates.title }),
-      ...(updates.type && { type: updates.type }),
-      ...(updates.style && { style: updates.style }),
-      ...(updates.color && { color: updates.color }),
-      ...(updates.icon && { icon: updates.icon }),
-      ...(updates.targetValue !== undefined && { targetValue: parseFloat(updates.targetValue) }),
-      ...(updates.currentValue !== undefined && { currentValue: parseFloat(updates.currentValue) }),
-      ...(updates.history && { history: updates.history }),
+      ...(updates.category && { category: updates.category }),
+      ...(updates.visualStyle && { visualStyle: updates.visualStyle }),
+      ...(updates.status && { status: updates.status }),
+      ...(updates.targetValue !== undefined && { targetValue: newTarget }),
+      ...(updates.currentValue !== undefined && { currentValue: newCurrent }),
+      progressPercent,
+      ...(updates.milestones && { milestones: updates.milestones }),
     }
   })
 

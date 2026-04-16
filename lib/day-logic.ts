@@ -6,7 +6,7 @@ export async function updateDayStats(dayId: string) {
   })
 
   const total = tasks.length
-  const completed = tasks.filter(t => t.done).length
+  const completed = tasks.filter(t => t.status === 'DONE').length
   
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
   

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,30 +8,32 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  createdAt    DateTime @default(now())
-  tasks        Task[]
-  systemLogs   SystemLog[]
-  days         Day[]
-  streaks      Streak?
-  widgets      Widget[]
-  goals        Goal[]
-  habits       Habit[]
-  eventLogs    EventLog[]
-  chatMessages ChatMessage[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  name              String?
+  createdAt         DateTime           @default(now())
+  chatMessages      ChatMessage[]
+  dailyReviews      DailyReview[]
+  days              Day[]
+  eventLogs         EventLog[]
+  goals             Goal[]
+  habits            Habit[]
+  habitLogs         HabitLog[]
   notificationLogs  NotificationLog[]
+  notificationRules NotificationRules?
+  streaks           Streak?
+  systemLogs        SystemLog[]
+  tasks             Task[]
   contextCache      UserContextCache?
   weatherCache      WeatherCache?
-  notificationRules NotificationRules?
+  widgets           Widget[]
 }
 
 model ChatMessage {
   id        String   @id @default(cuid())
   text      String
-  role      String   // "USER" | "MODEL"
+  role      String
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -43,70 +42,115 @@ model ChatMessage {
 }
 
 model Task {
-  id        String   @id @default(cuid())
-  title     String
-  done      Boolean  @default(false)
-  period    String   // "day" | "week" | "month"
-  parentId  String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    String
-  dayId     String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  day       Day?     @relation(fields: [dayId], references: [id], onDelete: SetNull)
-  parent    Task?    @relation("TaskChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Task[]   @relation("TaskChildren")
+  id               String     @id @default(cuid())
+  title            String
+  description      String?
+  priority         Priority   @default(MEDIUM)
+  status           TaskStatus @default(PENDING)
+  dueDate          DateTime?
+  completedAt      DateTime?
+  estimatedMinutes Int?
+  tags             String[]   @default([])
+  order            Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  userId           String
+  parentId         String?
+  dayId            String?
+  day              Day?       @relation(fields: [dayId], references: [id])
+  parent           Task?      @relation("TaskChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children         Task[]     @relation("TaskChildren")
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+  @@index([userId, status])
 }
 
 model Day {
-  id             String   @id @default(cuid())
-  date           DateTime @default(now())
-  totalTasks     Int      @default(0)
-  completedTasks Int      @default(0)
-  completionPercentage Int  @default(0)
-  status         String   @default("FAILED") // "COMPLETED" | "PARTIAL" | "FAILED"
-  isCompleted    Boolean  @default(false)
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks          Task[]
+  id                   String   @id @default(cuid())
+  date                 DateTime @default(now())
+  totalTasks           Int      @default(0)
+  completedTasks       Int      @default(0)
+  completionPercentage Int      @default(0)
+  status               String   @default("FAILED")
+  isCompleted          Boolean  @default(false)
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks                Task[]
 
   @@unique([userId, date])
 }
 
-
 model Habit {
-  id            String   @id @default(cuid())
-  title         String
-  duration      Int      @default(15) // In minutes
-  streak        Int      @default(0)
-  lastCompleted DateTime?
-  createdAt     DateTime @default(now())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  title           String
+  description     String?
+  frequency       HabitFrequency @default(DAILY)
+  targetStreak    Int            @default(30)
+  currentStreak   Int            @default(0)
+  longestStreak   Int            @default(0)
+  lastCompletedAt DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs            HabitLog[]
 
   @@index([userId])
 }
 
+model HabitLog {
+  id          String   @id @default(cuid())
+  habitId     String
+  userId      String
+  completedAt DateTime @default(now())
+  note        String?
+  habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+}
+
 model Goal {
-  id           String   @id @default(cuid())
-  title        String
-  type         String   // "money" | "task" | "habit"
-  style        String   @default("CLASSIC")
-  color        String?  @default("#ff0000")
-  icon         String?  @default("Target")
-  targetValue  Float
-  currentValue Float    @default(0)
-  history      Json?    // Array of { date: string, value: number }
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  title           String
+  description     String?
+  category        GoalCategory @default(PERSONAL)
+  progressPercent Int          @default(0)
+  targetDate      DateTime?
+  status          GoalStatus   @default(ACTIVE)
+  milestones      Json?
+  visualStyle     VisualStyle  @default(PROGRESS_BAR)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userId          String
+  currentValue    Float        @default(0)
+  targetValue     Float        @default(100)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model DailyReview {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  energyLevel     Int      @default(3)
+  mood            Mood     @default(NEUTRAL)
+  note            String?
+  tasksCompleted  Int      @default(0)
+  habitsCompleted Int      @default(0)
+  goalsUpdated    Int      @default(0)
+  createdAt       DateTime @default(now())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }
 
 model EventLog {
   id        String   @id @default(cuid())
-  type      String   // "TASK_COMPLETED", "TASK_CREATED", etc.
+  type      String
   payload   Json?
   timestamp DateTime @default(now())
   userId    String
@@ -123,7 +167,7 @@ model Streak {
 
 model Widget {
   id     String @id @default(cuid())
-  type   String // "DAY_GOALS" | "NOTES"
+  type   String
   posX   Int    @default(0)
   posY   Int    @default(0)
   w      Int    @default(300)
@@ -136,7 +180,7 @@ model Widget {
 model SystemLog {
   id        String   @id @default(cuid())
   message   String
-  level     String   @default("INFO") // "INFO" | "WARN" | "ERROR"
+  level     String   @default("INFO")
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -144,11 +188,11 @@ model SystemLog {
 
 model NotificationLog {
   id           String   @id @default(cuid())
-  type         String   // "voice" | "popup" | "silent"
+  type         String
   message      String
-  urgency      String   // "low" | "medium" | "high"
+  urgency      String
   wasShown     Boolean  @default(false)
-  userFeedback String?  // "helpful" | "annoying" | "ignored"
+  userFeedback String?
   createdAt    DateTime @default(now())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -157,14 +201,14 @@ model NotificationLog {
 }
 
 model UserContextCache {
-  id                String   @id @default(cuid())
-  lastSeenAt        DateTime @default(now())
-  locationStatus    String   @default("home") // "home" | "away"
-  lastActiveWindow  String?
-  batteryLevel      Int?
-  updatedAt         DateTime @updatedAt
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  lastSeenAt       DateTime @default(now())
+  locationStatus   String   @default("home")
+  lastActiveWindow String?
+  batteryLevel     Int?
+  updatedAt        DateTime @updatedAt
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WeatherCache {
@@ -178,11 +222,66 @@ model WeatherCache {
 }
 
 model NotificationRules {
-  id               String   @id @default(cuid())
-  silentFrom       String?  // HH:mm
-  silentUntil      String?  // HH:mm
-  maxPerHour       Int      @default(3)
-  preferredChannel String   @default("desktop") // "desktop" | "mobile" | "telegram"
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String  @id @default(cuid())
+  silentFrom       String?
+  silentUntil      String?
+  maxPerHour       Int     @default(3)
+  preferredChannel String  @default("desktop")
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKDAYS
+  WEEKENDS
+  WEEKLY
+}
+
+enum GoalCategory {
+  HEALTH
+  CAREER
+  FINANCE
+  PERSONAL
+  PROJECT
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ABANDONED
+}
+
+enum VisualStyle {
+  HUD
+  COUNTER
+  PROGRESS_BAR
+  RING
+  FLAME
+  RADAR
+  TIMELINE
+  CRYSTAL
+}
+
+enum Mood {
+  EXCELLENT
+  GOOD
+  NEUTRAL
+  LOW
+  CRITICAL
 }

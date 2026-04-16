@@ -18,13 +18,13 @@ export async function GET() {
   })
 
   const taskStats = await prisma.task.groupBy({
-    by: ['done'],
+    by: ['status'],
     where: { userId: session.userId },
     _count: true,
   })
 
   const total = taskStats.reduce((a, b) => a + b._count, 0)
-  const done = taskStats.find(s => s.done)?._count || 0
+  const done = taskStats.find(s => s.status === 'DONE')?._count || 0
 
   return NextResponse.json({
     status: 'OPERATIONAL',

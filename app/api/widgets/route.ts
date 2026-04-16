@@ -6,25 +6,35 @@ export async function GET(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
-  const widgets = await prisma.widget.findMany({
-    where: { userId: session.userId },
-  })
-  
-  // If no widgets, create default ones
-  if (widgets.length === 0) {
-    const defaultWidgets = [
-      { type: 'DAY_GOALS', posX: 40, posY: 40, w: 320, h: 450, userId: session.userId },
-      { type: 'NOTES', posX: 400, posY: 40, w: 300, h: 250, userId: session.userId },
-      { type: 'GOAL', posX: 400, posY: 320, w: 300, h: 240, userId: session.userId }
-    ]
-    const created = []
-    for (const w of defaultWidgets) {
-      created.push(await prisma.widget.create({ data: w }))
+  try {
+    const user = await prisma.user.findUnique({ where: { id: session.userId } })
+    if (!user) {
+        return NextResponse.json({ error: 'USER_NOT_FOUND', message: 'Operator removed from local database.' }, { status: 404 })
     }
-    return NextResponse.json({ widgets: created })
-  }
 
-  return NextResponse.json({ widgets })
+    const widgets = await prisma.widget.findMany({
+      where: { userId: session.userId },
+    })
+    
+    // If no widgets, create default ones
+    if (widgets.length === 0) {
+      const defaultWidgets = [
+        { type: 'DAY_GOALS', posX: 40, posY: 40, w: 320, h: 450, userId: session.userId },
+        { type: 'NOTES', posX: 400, posY: 40, w: 300, h: 250, userId: session.userId },
+        { type: 'GOAL', posX: 400, posY: 320, w: 300, h: 240, userId: session.userId }
+      ]
+      const created = []
+      for (const w of defaultWidgets) {
+        created.push(await prisma.widget.create({ data: w }))
+      }
+      return NextResponse.json({ widgets: created })
+    }
+
+    return NextResponse.json({ widgets })
+  } catch (error: any) {
+    console.error('[WIDGETS_GET_ERROR]', error)
+    return NextResponse.json({ error: 'CORE_LAYER_FAILURE', message: error.message }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {

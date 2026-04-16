@@ -19,8 +19,9 @@ export async function PATCH(
   const updated = await prisma.task.update({
     where: { id: params.id },
     data: {
-      ...(typeof body.done === 'boolean' && { done: body.done }),
+      ...(typeof body.done === 'boolean' && { status: body.done ? 'DONE' : 'PENDING' }),
       ...(body.title && { title: body.title.trim() }),
+      ...(body.priority && { priority: body.priority }),
     },
   })
 
@@ -28,7 +29,12 @@ export async function PATCH(
     await updateDayStats(updated.dayId)
   }
 
-  return NextResponse.json({ task: updated })
+  return NextResponse.json({ 
+    task: { 
+      ...updated, 
+      done: updated.status === 'DONE' 
+    } 
+  })
 }
 
 export async function DELETE(

@@ -29,7 +29,16 @@ export async function GET(req: NextRequest) {
     orderBy: { order: 'asc' },
   })
 
-  return NextResponse.json({ tasks })
+  // Recursive mapping function
+  const mapTasks = (tasks: any[]): any[] => {
+    return tasks.map(t => ({
+      ...t,
+      done: t.status === 'DONE',
+      children: t.children ? mapTasks(t.children) : []
+    }))
+  }
+
+  return NextResponse.json({ tasks: mapTasks(tasks) })
 }
 
 export async function POST(req: NextRequest) {

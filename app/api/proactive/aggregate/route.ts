@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDailyContext } from '@/lib/varta-context';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -48,28 +49,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ should_notify: false, reason: 'USER_BUSY_AND_NO_URGENCY' });
     }
 
-    // 3. Aggregate Full Context
-    const [overdueTasks, habits, goals, weather, userRules] = await Promise.all([
-      // Overdue tasks (tasks from previous days not completed)
-      prisma.task.findMany({
-          where: { userId: user_id, done: false, createdAt: { lt: new Date(now.setHours(0,0,0,0)) } },
-          take: 3
-      }),
-      // Habits not done today
-      prisma.habit.findMany({
-        where: {
-          userId: user_id,
-          OR: [
-            { lastCompleted: null },
-            { lastCompleted: { lt: new Date(now.setHours(0,0,0,0)) } }
-          ]
-        }
-      }),
-      // Goals progress
-      prisma.goal.findMany({ where: { userId: user_id }, take: 3 }),
-      // Weather cache
+    // 3. Aggregate Full Context (Unified Layer)
+    const [contextData, weather, userRules] = await Promise.all([
+      getDailyContext(user_id),
       prisma.weatherCache.findUnique({ where: { userId: user_id } }),
-      // User notification rules
       prisma.notificationRules.findUnique({ where: { userId: user_id } })
     ]);
 
@@ -86,6 +69,11 @@ export async function POST(req: NextRequest) {
         }
     }
 
+    // Check Urgent Priority for Pre-filter
+    if (contextData.summary.urgentCount === 0 && battery > 20 && idle_seconds < 300) {
+      return NextResponse.json({ should_notify: false, reason: 'USER_BUSY_AND_NO_URGENCY' });
+    }
+
     // 4. Update Context Cache for future checks
     await prisma.userContextCache.upsert({
         where: { userId: user_id },
@@ -93,18 +81,19 @@ export async function POST(req: NextRequest) {
         create: { userId: user_id, lastActiveWindow: active_window, batteryLevel: battery }
     });
 
-    // 5. Build AI Context
+    // 5. Build AI Context from unified data
     const context = {
       active_window,
       battery,
       idle_seconds,
       weather: weather ? { temp: weather.temp, condition: weather.condition, rain: weather.rainChance } : 'Unknown',
+      summary: contextData.summary,
       tasks: {
-        urgent: urgentTasks.map(t => t.title),
-        overdue: overdueTasks.map(t => t.title)
+        urgent: contextData.todaysTasks.filter(t => t.priority === 'CRITICAL' || t.priority === 'HIGH').map(t => t.title),
+        overdue: contextData.overdueTasks.map(t => t.title)
       },
-      habits_pending: habits.map(h => h.title),
-      goals_status: goals.map(g => `${g.title}: ${g.currentValue}/${g.targetValue}`)
+      habits_pending: contextData.pendingHabits.map(h => h.title),
+      goals_progress: contextData.activeGoals.map(g => `${g.title}: ${g.progressPercent}%`)
     };
 
     // 6. Gemini Flash Call

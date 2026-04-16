@@ -11,7 +11,15 @@ export async function GET(req: NextRequest) {
       where: { userId: session.userId },
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json({ habits })
+    
+    // Map currentStreak to streak for frontend
+    const mappedHabits = habits.map(h => ({
+      ...h,
+      streak: h.currentStreak,
+      lastCompleted: h.lastCompletedAt
+    }))
+
+    return NextResponse.json({ habits: mappedHabits })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -22,16 +30,16 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
   try {
-    const { title, duration } = await req.json()
+    const { title, description, frequency } = await req.json()
     const habit = await prisma.habit.create({
       data: {
         title,
-        duration: duration || 15,
+        description,
+        frequency: frequency || 'DAILY',
         userId: session.userId,
-        streak: 0
       }
     })
-    return NextResponse.json({ habit })
+    return NextResponse.json({ habit: { ...habit, streak: habit.currentStreak } })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -42,47 +50,42 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 })
 
   try {
-    const { id, title, duration, complete } = await req.json()
+    const { id, title, description, frequency, complete } = await req.json()
     
     if (complete) {
-        const habit = await prisma.habit.findUnique({ where: { id } })
-        if (!habit) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 })
-
-        const now = new Date()
-        const lastCompleted = habit.lastCompleted ? new Date(habit.lastCompleted) : null
-        let newStreak = habit.streak
-
-        if (!lastCompleted) {
-            newStreak = 1
-        } else {
-            const diffDays = Math.floor((now.getTime() - lastCompleted.getTime()) / (1000 * 60 * 60 * 24))
-            if (diffDays === 0) {
-                // Already completed today, no streak change
-            } else if (diffDays === 1) {
-                newStreak += 1
-            } else {
-                newStreak = 1
-            }
-        }
-
-        const updated = await prisma.habit.update({
-            where: { id },
-            data: { 
-                streak: newStreak,
-                lastCompleted: now
+        // Just create a log, the SQL trigger handles the streak update in the `Habit` table
+        await prisma.habitLog.create({
+            data: {
+                habitId: id,
+                userId: session.userId,
             }
         })
-        return NextResponse.json({ habit: updated })
+        
+        const updated = await prisma.habit.findUnique({ where: { id } })
+        return NextResponse.json({ 
+          habit: { 
+            ...updated, 
+            streak: updated?.currentStreak, 
+            lastCompleted: updated?.lastCompletedAt 
+          } 
+        })
     }
 
     const updated = await prisma.habit.update({
       where: { id },
       data: { 
         title: title || undefined,
-        duration: duration || undefined,
+        description: description || undefined,
+        frequency: frequency || undefined,
       }
     })
-    return NextResponse.json({ habit: updated })
+    return NextResponse.json({ 
+      habit: { 
+        ...updated, 
+        streak: updated.currentStreak, 
+        lastCompleted: updated.lastCompletedAt 
+      } 
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

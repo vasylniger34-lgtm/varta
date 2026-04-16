@@ -20,8 +20,21 @@ export async function GET(req: NextRequest) {
   // 2. Get today's Day
   let today = await prisma.day.findUnique({
     where: { userId_date: { userId, date: todayDate } },
-    include: { tasks: { orderBy: { order: 'asc' } } }
+    include: { 
+      tasks: { 
+        orderBy: { order: 'asc' },
+        include: { children: true } 
+      } 
+    }
   })
+
+  // Map status -> done for frontend
+  if (today) {
+    today = {
+      ...today,
+      tasks: today.tasks.map((t: any) => ({ ...t, done: t.status === 'DONE' }))
+    } as any
+  }
 
   // 3. Logic: If today doesn't exist, we might need a reset/migration
   // We check for the latest day before today
@@ -74,7 +87,7 @@ export async function POST(req: NextRequest) {
   const lastDay = await prisma.day.findFirst({
     where: { userId, date: { lt: todayDate } },
     orderBy: { date: 'desc' },
-    include: { tasks: { where: { done: false } } }
+    include: { tasks: { where: { NOT: { status: 'DONE' } } } }
   })
 
   let currentStreak = 0
@@ -128,7 +141,7 @@ export async function POST(req: NextRequest) {
           dayId: newDay.id,
           order: task.order,
           period: 'day',
-          done: false, // ensure they stay unfinished in the new day
+          status: 'PENDING', 
         }
       })
     }
@@ -139,5 +152,11 @@ export async function POST(req: NextRequest) {
     include: { tasks: { orderBy: { order: 'asc' } } }
   })
 
-  return NextResponse.json({ today: finalDay, streak: { current: currentStreak } })
+  // Map status -> done
+  const mappedDay = finalDay ? {
+    ...finalDay,
+    tasks: finalDay.tasks.map((t: any) => ({ ...t, done: t.status === 'DONE' }))
+  } : null
+
+  return NextResponse.json({ today: mappedDay, streak: { current: currentStreak } })
 }
