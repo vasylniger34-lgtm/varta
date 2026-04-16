@@ -142,7 +142,10 @@ function renderGoalStyle(style: string, goal: any, progress: number) {
                 transform="rotate(-90 40 40)"
               />
             </svg>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, className: 'mono' }}>
+            <div 
+              style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700 }}
+              className="mono"
+            >
               {Math.round(progress)}%
             </div>
           </div>
