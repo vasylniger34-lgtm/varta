@@ -25,6 +25,10 @@ model User {
   habits       Habit[]
   eventLogs    EventLog[]
   chatMessages ChatMessage[]
+  notificationLogs  NotificationLog[]
+  contextCache      UserContextCache?
+  weatherCache      WeatherCache?
+  notificationRules NotificationRules?
 }
 
 model ChatMessage {
@@ -136,4 +140,49 @@ model SystemLog {
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationLog {
+  id           String   @id @default(cuid())
+  type         String   // "voice" | "popup" | "silent"
+  message      String
+  urgency      String   // "low" | "medium" | "high"
+  wasShown     Boolean  @default(false)
+  userFeedback String?  // "helpful" | "annoying" | "ignored"
+  createdAt    DateTime @default(now())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model UserContextCache {
+  id                String   @id @default(cuid())
+  lastSeenAt        DateTime @default(now())
+  locationStatus    String   @default("home") // "home" | "away"
+  lastActiveWindow  String?
+  batteryLevel      Int?
+  updatedAt         DateTime @updatedAt
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WeatherCache {
+  id         String   @id @default(cuid())
+  temp       Float
+  condition  String
+  rainChance Float
+  fetchedAt  DateTime @default(now())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationRules {
+  id               String   @id @default(cuid())
+  silentFrom       String?  // HH:mm
+  silentUntil      String?  // HH:mm
+  maxPerHour       Int      @default(3)
+  preferredChannel String   @default("desktop") // "desktop" | "mobile" | "telegram"
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
